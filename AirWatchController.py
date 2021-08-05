@@ -16,16 +16,45 @@ class AirWatchController:
         self.AW_KEY = airwatch.key
         self.api_url = api_url
 
+    def req(self, method, url, headers=None, json=None, params=None):
+        """Formats an API call to AirWatch using the requests module with some common parameters set to default
+        values. """
+        def_header = {
+            "Authorization": self.AW_AUTH,
+            "aw-tenant-code": self.AW_KEY,
+            "Accept": "application/json",
+        }
+        endp = f"{self.api_url}{url}"
+        if headers is not None:
+            for key in headers:
+                def_header[key] = headers["key"]
+        if method == "get":
+            if params is None:
+                params = {}
+            response = requests.get(
+                url=endp,
+                headers=def_header,
+                params=params
+            )
+            return response
+        elif method == "put":
+            if json is None:
+                json = {}
+            response = requests.put(
+                url=endp,
+                headers=def_header,
+                json=json,
+            )
+            return response
+        else:
+            return None
+
     def search(self, serial):
         """Searches AirWatch for serial number. Returns AWAsset object if it is found,
         otherwise returns None."""
-        response = requests.get(
-            url=f"{self.api_url}/mdm/devices",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="get",
+            url="/mdm/devices",
             params={
                 "searchBy": "Serialnumber",
                 "id": serial,
@@ -49,13 +78,9 @@ class AirWatchController:
         See AirWatch API docs for valid field names.
         Returns the request status code."""
         aw_id = self.get_airwatch_id(serial)
-        response = requests.put(
-            url=f"{self.api_url}/mdm/devices/{aw_id}",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="put",
+            url=f"/mdm/devices/{aw_id}",
             json=updates,
         )
         return response.status_code
@@ -64,13 +89,9 @@ class AirWatchController:
         """Updates the Asset Number field in AirWatch for a given serial number.
         Returns the request status code."""
         aw_id = self.get_airwatch_id(serial)
-        response = requests.put(
-            url=f"{self.api_url}/mdm/devices/{aw_id}",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="put",
+            url=f"/mdm/devices/{aw_id}",
             json={
                 "AssetNumber": asset_tag,
             }
@@ -81,13 +102,9 @@ class AirWatchController:
         """Updates the Asset Friendly Name field in AirWatch for a given serial number.
         Returns the request status code."""
         aw_id = self.get_airwatch_id(serial)
-        response = requests.put(
-            url=f"{self.api_url}/mdm/devices/{aw_id}",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="put",
+            url=f"/mdm/devices/{aw_id}",
             json={
                 "DeviceFriendlyName": name,
             }
@@ -98,13 +115,9 @@ class AirWatchController:
         """Updates the Org Group in AirWatch for a given serial number.
                 Returns the request status code."""
         aw_id = self.get_airwatch_id(serial)
-        new_org = requests.get(
-            url=f"{self.api_url}/system/groups/search",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        new_org = self.req(
+            method="get",
+            url="/system/groups/search",
             params={
                 "Name": org,
             }
@@ -112,25 +125,17 @@ class AirWatchController:
         if new_org.status_code != 200:
             return new_org.status_code
         new_org_id = new_org.json()["LocationGroups"][0]["Id"]["Value"]
-        response = requests.put(
-            url=f"{self.api_url}/mdm/devices/{aw_id}/commands/changeorganizationgroup/{new_org_id}",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="put",
+            url=f"/mdm/devices/{aw_id}/commands/changeorganizationgroup/{new_org_id}",
         )
         return response.status_code
 
     def get_smart_groups(self, serial):
         aw_id = self.get_airwatch_id(serial)
-        response = requests.get(
-            url=f"{self.api_url}/mdm/devices/{aw_id}/smartgroups",
-            headers={
-                "Authorization": self.AW_AUTH,
-                "aw-tenant-code": self.AW_KEY,
-                "Accept": "application/json",
-            },
+        response = self.req(
+            method="get",
+            url=f"/mdm/devices/{aw_id}/smartgroups",
         )
         return response.json()
 
