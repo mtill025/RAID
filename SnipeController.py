@@ -49,16 +49,9 @@ class SnipeController:
 
     def search(self, serial):
         url = f"/hardware/byserial/{serial}"
-        parameters = {
-            # "limit": "2",
-            # "offset": "0",
-            # "sort": "created_at",
-            # "order": "desc",
-        }
         response = self.req(
             method="get",
             url=url,
-            params=parameters,
         )
         if response.status_code == 200 and response.json()['rows'] != []:
             return self.SnipeAsset(response.json()['rows'][0])
