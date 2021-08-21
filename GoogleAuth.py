@@ -13,15 +13,15 @@ class GoogleAuth:
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists('token.json'):
-            self.credentials = Credentials.from_authorized_user_file('token.json', scopes)
+        if os.path.exists('secrets/token.json'):
+            self.credentials = Credentials.from_authorized_user_file('secrets/token.json', scopes)
         self.refresh_creds()
 
     def initialize_oauth(self):
         flow = InstalledAppFlow.from_client_secrets_file(
-            'credentials.json', self.scopes)
+            'secrets/credentials.json', self.scopes)
         credentials = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
+        with open('secrets/token.json', 'w') as token:
             token.write(credentials.to_json())
 
     def refresh_creds(self):
