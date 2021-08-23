@@ -8,15 +8,19 @@ class RaidResponse:
 
     def __init__(self, code):
         messages = {
+            'r100': 'Unknown error code: ',
             'r200': 'Operation completed successfully.',
             's302': 'No assets matched query.',
-            's400': 'Update Property failed.',
+            's400': 'Update property failed.',
             's401': 'Asset tag already exists.',
             'g301': 'More than one asset matched query.',
             'g302': 'No assets matched query.',
             'g400': 'Update property failed.',
             'g401': 'Move asset to OU failed.',
         }
+        if code not in messages:
+            messages['r100'] = messages['r100'] + code
+            code = 'r100'
         self.json = {
             'raid_code': {
                 'code': code,

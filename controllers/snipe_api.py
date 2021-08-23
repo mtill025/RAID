@@ -62,10 +62,39 @@ class SnipeController:
             return self.SnipeAsset(response.json()['rows'][0])
         return self.SnipeAsset(RaidResponse('s302').json)
 
+    def search_by_asset_tag(self, asset_tag):
+        url = f"/hardware/bytag/{asset_tag}"
+        response = self.req(
+            method="get",
+            url=url,
+        )
+        if 'status' not in response.json():
+            return self.SnipeAsset(response.json())
+        return self.SnipeAsset(RaidResponse('s302').json)
+
     def get_snipe_id(self, serial):
         asset = self.search(serial)
         if asset.raid_code['code'] == 'r200':
             return asset.dict['id']
+        return None
+
+    def get_companies(self):
+        url = "/companies"
+        response = self.req(
+            method="get",
+            url=url,
+        )
+        companies = response.json()
+        companies['names'] = []
+        for company in companies['rows']:
+            companies['names'].append(company['name'])
+        return companies
+
+    def get_company_id(self, req_company):
+        companies = self.get_companies()
+        for company in companies['rows']:
+            if req_company == company['name']:
+                return company['id']
         return None
 
     def update_asset_name(self, serial, new_name):
@@ -100,7 +129,7 @@ class SnipeController:
         return self.SnipeAsset(RaidResponse('s400').json)
 
     def update_asset_tag(self, serial, new_tag):
-        if "id" in self.search_by_asset_tag(new_tag):
+        if "id" in self.search_by_asset_tag(new_tag).dict:
             return self.SnipeAsset(RaidResponse('s401').json)
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
@@ -116,32 +145,9 @@ class SnipeController:
             return self.SnipeAsset(response.json())
         return self.SnipeAsset(RaidResponse('s400').json)
 
-    def search_by_asset_tag(self, asset_tag):
-        url = f"/hardware/bytag/{asset_tag}"
-        response = self.req(
-            method="get",
-            url=url,
-        )
-        return self.SnipeAsset(response.json())
 
-    def get_companies(self):
-        url = "/companies"
-        response = self.req(
-            method="get",
-            url=url,
-        )
-        companies = response.json()
-        companies['names'] = []
-        for company in companies['rows']:
-            companies['names'].append(company['name'])
-        return companies
 
-    def get_company_id(self, req_company):
-        companies = self.get_companies()
-        for company in companies['rows']:
-            if req_company == company['name']:
-                return company['id']
-        return None
+
 
 
 
