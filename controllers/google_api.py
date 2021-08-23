@@ -1,16 +1,49 @@
-from GoogleAuth import GoogleAuth
+from __future__ import print_function
+from raid import RaidAsset, RaidResponse
 from googleapiclient.discovery import build
-from RaidResponse import RaidResponse
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+import os.path
+
+
+class GoogleAuth:
+
+    def __init__(self, scopes):
+        # Scopes set the access permissions
+        self.scopes = scopes
+        self.credentials = None
+        # The file token.json stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists('secrets/token.json'):
+            self.credentials = Credentials.from_authorized_user_file('secrets/token.json', scopes)
+        self.refresh_creds()
+
+    def initialize_oauth(self):
+        """Opens browser window and asks user to sign in to Google. Builds OAuth window using information
+        in credentials.json"""
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'secrets/credentials.json', self.scopes)
+        credentials = flow.run_local_server(port=0)
+        with open('secrets/token.json', 'w') as token:
+            token.write(credentials.to_json())
+
+    def refresh_creds(self):
+        """Attempts to use the refresh token to refresh OAuth access"""
+        if not self.credentials or not self.credentials.valid:
+            if self.credentials and self.credentials.expired and self.credentials.refresh_token:
+                self.credentials.refresh(Request())
 
 
 class GoogleController:
-    class GoogleAsset:
+
+    class GoogleAsset(RaidAsset):
         def __init__(self, assetinfo):
-            self.dict = assetinfo
-            for key in assetinfo:
-                setattr(self, key, assetinfo[key])
+            super().__init__(assetinfo)
 
     def __init__(self):
+        """Wrapper for interacting with the Google Admin API."""
         scopes = ['https://www.googleapis.com/auth/admin.directory.device.chromeos',
                   'https://www.googleapis.com/auth/admin.directory.orgunit']
         self.google_auth = GoogleAuth(scopes)
@@ -19,6 +52,7 @@ class GoogleController:
         self.service = build('admin', 'directory_v1', credentials=self.google_auth.credentials)
 
     def search(self, serial):
+        """Searches AirWatch for serial number. Returns RaidAsset object. """
         results = self.service.chromeosdevices().list(customerId="my_customer", query=serial,
                                                       projection="BASIC").execute()
         matches = len(results['chromeosdevices'])
@@ -63,6 +97,6 @@ class GoogleController:
 
     def get_device_id(self, serial):
         result = self.search(serial)
-        if 'raid_code' not in result.dict:
+        if result.raid_code['code'] == 'r200':
             return result.deviceId
         return None

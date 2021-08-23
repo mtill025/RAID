@@ -1,14 +1,21 @@
 import requests
-from AWAuth import AWAuth
+import keyring
+import base64
+from raid import RaidAsset
+
+
+class AWAuth:
+
+    def __init__(self):
+        self.cred = "Basic " + str(base64.b64encode(keyring.get_password("aw_auth", "authcode").encode("ascii"))).split("'")[1]
+        self.key = keyring.get_password("aw_key", "key")
 
 
 class AirWatchController:
 
-    class AWAsset:
+    class AWAsset(RaidAsset):
         def __init__(self, assetinfo):
-            self.dict = assetinfo
-            for key in assetinfo:
-                setattr(self, key, assetinfo[key])
+            super().__init__(assetinfo)
 
     def __init__(self, api_url):
         airwatch = AWAuth()
@@ -18,7 +25,8 @@ class AirWatchController:
 
     def req(self, method, url, headers=None, json=None, params=None):
         """Formats an API call to AirWatch using the requests module with some common parameters set to default
-        values. """
+        values.
+         Returns the entire request response object or None if invalid parameters were provided."""
         def_header = {
             "Authorization": self.AW_AUTH,
             "aw-tenant-code": self.AW_KEY,
@@ -50,7 +58,7 @@ class AirWatchController:
             return None
 
     def search(self, serial):
-        """Searches AirWatch for serial number. Returns AWAsset object if it is found,
+        """Searches AirWatch for serial number. Returns RaidAsset object if it is found,
         otherwise returns None."""
         response = self.req(
             method="get",

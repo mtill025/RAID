@@ -1,14 +1,19 @@
 import requests
-from SnipeAuth import SnipeAuth
+import keyring
+from raid import RaidAsset, RaidResponse
+
+
+class SnipeAuth:
+
+    def __init__(self):
+        self.auth = keyring.get_password("snipe_key", "key")
 
 
 class SnipeController:
 
-    class SnipeAsset:
+    class SnipeAsset(RaidAsset):
         def __init__(self, assetinfo):
-            self.dict = assetinfo
-            for key in assetinfo:
-                setattr(self, key, assetinfo[key])
+            super().__init__(assetinfo)
 
     def __init__(self, api_url):
         snipe = SnipeAuth()
@@ -55,12 +60,11 @@ class SnipeController:
         )
         if response.status_code == 200 and response.json()['rows'] != []:
             return self.SnipeAsset(response.json()['rows'][0])
-        else:
-            return None
+        return self.SnipeAsset(RaidResponse('s302').json)
 
     def get_snipe_id(self, serial):
         asset = self.search(serial)
-        if asset:
+        if asset.raid_code['code'] == 'r200':
             return asset.dict['id']
         return None
 
@@ -75,7 +79,9 @@ class SnipeController:
             url=url,
             json=json,
         )
-        return response.json()
+        if snipe_id:
+            return self.SnipeAsset(response.json())
+        return self.SnipeAsset(RaidResponse('s400').json)
 
     def update_asset_company(self, serial, new_company):
         snipe_id = self.get_snipe_id(serial)
@@ -84,32 +90,31 @@ class SnipeController:
         json = {
             "company_id": company_id
         }
-        if company_id is not None:
+        if company_id is not None and snipe_id is not None:
             response = self.req(
                 method="put",
                 url=url,
                 json=json,
             )
-            return response.json()
-        return {'status': 'error'}
+            return self.SnipeAsset(response.json())
+        return self.SnipeAsset(RaidResponse('s400').json)
 
     def update_asset_tag(self, serial, new_tag):
         if "id" in self.search_by_asset_tag(new_tag):
-            return {
-                "status": "error",
-                "message": "Asset tag already exists"
-            }
+            return self.SnipeAsset(RaidResponse('s401').json)
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
         json = {
             "asset_tag": new_tag
         }
-        response = self.req(
-            method="put",
-            url=url,
-            json=json,
-        )
-        return response.json()
+        if snipe_id is not None:
+            response = self.req(
+                method="put",
+                url=url,
+                json=json,
+            )
+            return self.SnipeAsset(response.json())
+        return self.SnipeAsset(RaidResponse('s400').json)
 
     def search_by_asset_tag(self, asset_tag):
         url = f"/hardware/bytag/{asset_tag}"
@@ -117,7 +122,7 @@ class SnipeController:
             method="get",
             url=url,
         )
-        return response.json()
+        return self.SnipeAsset(response.json())
 
     def get_companies(self):
         url = "/companies"
