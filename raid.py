@@ -1,7 +1,8 @@
 # TODO: Docstrings for all methods
-# TODO: Implement return type standards for all methods
 # TODO: Test all methods for both success and failure
 # TODO: Comments
+# TODO: Settings file
+# TODO: Implement success checks for all put methods in all controllers
 
 
 class RaidResponse:
@@ -9,6 +10,9 @@ class RaidResponse:
     def __init__(self, code):
         messages = {
             'r100': 'Unknown error code: ',
+            'r101': 'Request submitted with unknown result.',
+            'a401': 'New org not found.',
+            'a500': 'Search failed.',
             'r200': 'Operation completed successfully.',
             's302': 'No assets matched query.',
             's400': 'Update property failed.',
