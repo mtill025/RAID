@@ -16,8 +16,10 @@ class AirWatchController:
     class AWAsset(RaidAsset):
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
+            self.platform = "AirWatch"
 
     def __init__(self, api_url):
+        """Wrapper for interacting with the AirWatch API."""
         airwatch = AWAuth()
         self.AW_AUTH = airwatch.cred
         self.AW_KEY = airwatch.key
@@ -58,8 +60,7 @@ class AirWatchController:
             return None
 
     def search(self, serial):
-        """Searches AirWatch for serial number. Returns RaidAsset object if it is found,
-        otherwise returns None."""
+        """Searches AirWatch for serial number. Returns RaidAsset object."""
         response = self.req(
             method="get",
             url="/mdm/devices",
@@ -71,33 +72,31 @@ class AirWatchController:
         if response.status_code == 200:
             asset_info = response.json()
             return self.AWAsset(asset_info)
-        return self.AWAsset(RaidResponse('a500').json)
+        return self.AWAsset(RaidResponse('500').json)
 
     def get_airwatch_id(self, serial):
         """Searches AirWatch for serial number. Returns AirWatch ID of asset if it is found,
         otherwise returns None."""
         asset = self.search(serial)
-        if asset.raid_code['code'] == 'r200':
+        if asset.raid_code['code'] == '200':
             return asset.Id["Value"]
         return None
 
     def update_asset(self, serial, updates: dict):
         """Updates the fields in AirWatch defined in the updates parameter for a given serial number.
         See AirWatch API docs for valid field names.
-        Returns the request status code."""
+        Returns RaidAsset object with AW API response status code."""
         aw_id = self.get_airwatch_id(serial)
         response = self.req(
             method="put",
             url=f"/mdm/devices/{aw_id}",
             json=updates,
         )
-        json = RaidResponse('r101').json
-        json['aw_code'] = response.status_code
-        return self.AWAsset(json)
+        return self.AWAsset(RaidResponse('101', api_code=response.status_code).json)
 
     def update_asset_tag(self, serial, asset_tag):
         """Updates the Asset Number field in AirWatch for a given serial number.
-        Returns the request status code."""
+        Returns RaidAsset object with AW API response status code."""
         json = {
             "AssetNumber": asset_tag,
         }
@@ -105,7 +104,7 @@ class AirWatchController:
 
     def update_asset_name(self, serial, name):
         """Updates the Asset Friendly Name field in AirWatch for a given serial number.
-        Returns the request status code."""
+        Returns RaidAsset object with AW API response status code."""
         json = {
             "DeviceFriendlyName": name,
         }
@@ -113,7 +112,7 @@ class AirWatchController:
 
     def update_asset_org(self, serial, org):
         """Updates the Org Group in AirWatch for a given serial number.
-                Returns the request status code."""
+         Returns RaidAsset object with AW API response status code."""
         aw_id = self.get_airwatch_id(serial)
         new_org = self.req(
             method="get",
@@ -123,15 +122,13 @@ class AirWatchController:
             }
         )
         if new_org.status_code != 200:
-            return self.AWAsset(RaidResponse('a401').json)
+            return self.AWAsset(RaidResponse('501').json)
         new_org_id = new_org.json()["LocationGroups"][0]["Id"]["Value"]
         response = self.req(
             method="put",
             url=f"/mdm/devices/{aw_id}/commands/changeorganizationgroup/{new_org_id}",
         )
-        json = RaidResponse('r101').json
-        json['aw_code'] = response.status_code
-        return self.AWAsset(json)
+        return self.AWAsset(RaidResponse('101', api_code=response.status_code).json)
 
     def get_smart_groups(self, serial):
         aw_id = self.get_airwatch_id(serial)

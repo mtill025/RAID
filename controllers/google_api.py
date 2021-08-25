@@ -1,6 +1,7 @@
 from __future__ import print_function
 from raid import RaidAsset, RaidResponse
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -13,9 +14,6 @@ class GoogleAuth:
         # Scopes set the access permissions
         self.scopes = scopes
         self.credentials = None
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
         if os.path.exists('secrets/token.json'):
             self.credentials = Credentials.from_authorized_user_file('secrets/token.json', scopes)
         self.refresh_creds()
@@ -41,6 +39,7 @@ class GoogleController:
     class GoogleAsset(RaidAsset):
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
+            self.platform = "Google"
 
     def __init__(self):
         """Wrapper for interacting with the Google Admin API."""
@@ -51,18 +50,20 @@ class GoogleController:
             self.google_auth.initialize_oauth()
         self.service = build('admin', 'directory_v1', credentials=self.google_auth.credentials)
 
-    def search(self, serial):
-        """Searches AirWatch for serial number. Returns RaidAsset object. """
+    def search(self, serial, level="BASIC"):
+        """Searches Google for serial number. Returns RaidAsset object. """
         results = self.service.chromeosdevices().list(customerId="my_customer", query=serial,
-                                                      projection="BASIC").execute()
+                                                      projection=level).execute()
+        if 'chromeosdevices' not in results:
+            return self.GoogleAsset(RaidResponse('302').json)
         matches = len(results['chromeosdevices'])
-        if matches == 1:
-            return self.GoogleAsset(results['chromeosdevices'][0])
-        elif matches > 1:
-            return self.GoogleAsset(RaidResponse('g301').json)
-        return self.GoogleAsset(RaidResponse('g302').json)
+        if matches > 1:
+            return self.GoogleAsset(RaidResponse('301').json)
+        return self.GoogleAsset(results['chromeosdevices'][0])
 
     def update_asset(self, attr, serial, new_data):
+        """Updates asset's provided attribute in Google. See Google Admin SDK API docs for valid attribute names.
+        Returns RaidAsset object."""
         result = self.get_device_id(serial)
         payload = {
             attr: new_data
@@ -73,15 +74,21 @@ class GoogleController:
                                                              body=payload,
                                                              projection="BASIC").execute()
             return self.GoogleAsset(response)
-        return self.GoogleAsset(RaidResponse('g400').json)
+        return self.GoogleAsset(RaidResponse('400').json)
 
     def update_asset_name(self, serial, new_name):
+        """Updates asset's name (Asset ID in Google speak) in Google.
+        Returns RaidAsset object."""
         return self.update_asset("annotatedAssetId", serial, new_name)
 
     def update_asset_tag(self, serial, new_tag):
+        """Updates asset's inventory tag number (Notes field) in Google.
+        Returns RaidAsset object."""
         return self.update_asset("notes", serial, new_tag)
 
     def update_asset_org(self, serial, new_org):
+        """Updates asset's OU in Google.
+        Returns RaidAsset object."""
         result = self.get_device_id(serial)
         if result:
             payload = {
@@ -89,14 +96,19 @@ class GoogleController:
                     result
                 ]
             }
-            response = self.service.chromeosdevices().moveDevicesToOu(customerId="my_customer",
+            try:
+                self.service.chromeosdevices().moveDevicesToOu(customerId="my_customer",
                                                                       orgUnitPath=new_org,
                                                                       body=payload).execute()
-            return self.GoogleAsset(response)
-        return self.GoogleAsset(RaidResponse('g401').json)
+            except HttpError:
+                return self.GoogleAsset(RaidResponse('501').json)
+            else:
+                return self.GoogleAsset(RaidResponse('200').json)
+        return self.GoogleAsset(RaidResponse('302').json)
 
     def get_device_id(self, serial):
+        """Returns assets Google device ID if found, otherwise returns None."""
         result = self.search(serial)
-        if result.raid_code['code'] == 'r200':
+        if result.raid_code['code'] == '200':
             return result.deviceId
         return None

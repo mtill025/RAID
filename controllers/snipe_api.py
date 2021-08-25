@@ -14,8 +14,10 @@ class SnipeController:
     class SnipeAsset(RaidAsset):
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
+            self.platform = "Snipe"
 
     def __init__(self, api_url):
+        """Wrapper for interacting with the Snipe API."""
         snipe = SnipeAuth()
         self.auth = snipe.auth
         self.api_url = api_url
@@ -53,16 +55,21 @@ class SnipeController:
             return None
 
     def search(self, serial):
+        """Searches Snipe for serial number.
+        Returns RaidAsset object."""
         url = f"/hardware/byserial/{serial}"
         response = self.req(
             method="get",
             url=url,
         )
-        if response.status_code == 200 and response.json()['rows'] != []:
-            return self.SnipeAsset(response.json()['rows'][0])
-        return self.SnipeAsset(RaidResponse('s302').json)
+        json = response.json()
+        if response.status_code == 200 and json['rows'] != []:
+            return self.SnipeAsset(json['rows'][0])
+        return self.SnipeAsset(RaidResponse('302', json['messages']).json)
 
     def search_by_asset_tag(self, asset_tag):
+        """Searches Snipe for asset tag.
+        Returns RaidAsset object."""
         url = f"/hardware/bytag/{asset_tag}"
         response = self.req(
             method="get",
@@ -70,15 +77,17 @@ class SnipeController:
         )
         if 'status' not in response.json():
             return self.SnipeAsset(response.json())
-        return self.SnipeAsset(RaidResponse('s302').json)
+        return self.SnipeAsset(RaidResponse('302').json)
 
     def get_snipe_id(self, serial):
+        """Returns Snipe ID for serial provided if found, otherwise returns None."""
         asset = self.search(serial)
-        if asset.raid_code['code'] == 'r200':
+        if asset.raid_code['code'] == '200':
             return asset.dict['id']
         return None
 
     def get_companies(self):
+        """Returns dictionary of companies currently in Snipe."""
         url = "/companies"
         response = self.req(
             method="get",
@@ -91,6 +100,7 @@ class SnipeController:
         return companies
 
     def get_company_id(self, req_company):
+        """Returns Snipe company ID for company provided if found, otherwise returns None."""
         companies = self.get_companies()
         for company in companies['rows']:
             if req_company == company['name']:
@@ -98,6 +108,8 @@ class SnipeController:
         return None
 
     def update_asset_name(self, serial, new_name):
+        """Updates asset's name in Snipe.
+        Returns RaidAsset object."""
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
         json = {
@@ -110,9 +122,11 @@ class SnipeController:
         )
         if snipe_id:
             return self.SnipeAsset(response.json())
-        return self.SnipeAsset(RaidResponse('s400').json)
+        return self.SnipeAsset(RaidResponse('400').json)
 
     def update_asset_company(self, serial, new_company):
+        """Updates asset's company in Snipe.
+        Returns RaidAsset object."""
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
         company_id = self.get_company_id(new_company)
@@ -126,11 +140,13 @@ class SnipeController:
                 json=json,
             )
             return self.SnipeAsset(response.json())
-        return self.SnipeAsset(RaidResponse('s400').json)
+        return self.SnipeAsset(RaidResponse('400').json)
 
     def update_asset_tag(self, serial, new_tag):
+        """Updates asset's inventory tag number in Snipe.
+        Returns RaidAsset object."""
         if "id" in self.search_by_asset_tag(new_tag).dict:
-            return self.SnipeAsset(RaidResponse('s401').json)
+            return self.SnipeAsset(RaidResponse('401').json)
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
         json = {
@@ -143,7 +159,7 @@ class SnipeController:
                 json=json,
             )
             return self.SnipeAsset(response.json())
-        return self.SnipeAsset(RaidResponse('s400').json)
+        return self.SnipeAsset(RaidResponse('400').json)
 
 
 
