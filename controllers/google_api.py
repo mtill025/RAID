@@ -49,6 +49,7 @@ class GoogleController:
         if not self.google_auth.credentials:
             self.google_auth.initialize_oauth()
         self.service = build('admin', 'directory_v1', credentials=self.google_auth.credentials)
+        self.platform = "Google"
 
     def search(self, serial, level="BASIC"):
         """Searches Google for serial number. Returns RaidAsset object. """

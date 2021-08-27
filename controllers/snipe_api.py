@@ -21,6 +21,7 @@ class SnipeController:
         snipe = SnipeAuth()
         self.auth = snipe.auth
         self.api_url = api_url
+        self.platform = "Snipe"
 
     def req(self, method, url, headers=None, json=None, params=None):
         """Formats an API call to Snipe using the requests module with some common parameters set to default
@@ -65,7 +66,10 @@ class SnipeController:
         json = response.json()
         if response.status_code == 200 and json['rows'] != []:
             return self.SnipeAsset(json['rows'][0])
-        return self.SnipeAsset(RaidResponse('302', json['messages']).json)
+        try:
+            return self.SnipeAsset(RaidResponse('302', json['messages']).json)
+        except KeyError:
+            return self.SnipeAsset(RaidResponse('302').json)
 
     def search_by_asset_tag(self, asset_tag):
         """Searches Snipe for asset tag.
@@ -160,6 +164,12 @@ class SnipeController:
             )
             return self.SnipeAsset(response.json())
         return self.SnipeAsset(RaidResponse('400').json)
+
+    def get_asset_category(self, serial):
+        asset = self.search(serial)
+        if asset.raid_code['code'] == '200':
+            return asset.category['name']
+        return None
 
 
 

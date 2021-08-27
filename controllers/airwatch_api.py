@@ -24,6 +24,7 @@ class AirWatchController:
         self.AW_AUTH = airwatch.cred
         self.AW_KEY = airwatch.key
         self.api_url = api_url
+        self.platform = "AirWatch"
 
     def req(self, method, url, headers=None, json=None, params=None):
         """Formats an API call to AirWatch using the requests module with some common parameters set to default
