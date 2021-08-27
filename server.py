@@ -1,4 +1,5 @@
 from controllers import snipe_api, google_api, airwatch_api, munki_xml
+from flask import Flask, render_template, redirect, url_for, flash, abort
 from raid import RaidSettings
 import json
 import os
@@ -14,6 +15,20 @@ google = google_api.GoogleController()
 snipe = snipe_api.SnipeController(settings.controller_urls['snipe'])
 aw = airwatch_api.AirWatchController(settings.controller_urls['airwatch'])
 munki = munki_xml.MunkiController(settings.controller_urls['munki'])
+
+# Web server
+app = Flask(__name__)
+app.config['SECRET_KEY'] = settings.web_server['key']
+
+# ### ROUTES ### #
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+# ### RAID FUNCTIONS ### #
 
 
 def get_platform(serial):
@@ -95,3 +110,6 @@ def raid_update_asset_tag(serial, new_tag):
             pass
     return results
 
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
