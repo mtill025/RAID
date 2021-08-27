@@ -36,3 +36,10 @@ class RaidAsset:
             self.dict['raid_code'] = RaidResponse('200').json['raid_code']
         for key in assetinfo:
             setattr(self, key, assetinfo[key])
+
+
+class RaidSettings:
+    def __init__(self, settings_dict):
+        for key in settings_dict:
+            setattr(self, key, settings_dict[key])
+
