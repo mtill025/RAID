@@ -3,13 +3,25 @@ body {
     align: center;
 }
 
-h1 {
+.navbar {
+    background-color: #52616B;
+}
+
+.navbar-brand {
     font-size: 3.5rem;
     line-height: 1.5;
     font-weight: 900;
 }
+
+.row-search {
+    margin: 30px;
+}
+
+.row-results {
+    text-align: center;
+}
+
 .search_form {
-    padding: 0% 35%;
     text-align: center;
 }
 
@@ -17,6 +29,3 @@ h1 {
     margin: 7px;
 }
 
-.form {
-    margin: 7px;
-}
