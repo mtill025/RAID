@@ -1,5 +1,7 @@
 from controllers import snipe_api, google_api, airwatch_api, munki_xml
+from system import forms
 from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask_bootstrap import Bootstrap
 from raid import RaidSettings
 import json
 import os
@@ -18,14 +20,18 @@ munki = munki_xml.MunkiController(settings.controller_urls['munki'])
 
 # Web server
 app = Flask(__name__)
+bootstrap = Bootstrap(app)
 app.config['SECRET_KEY'] = settings.web_server['key']
 
 # ### ROUTES ### #
 
 
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def index():
-    return render_template('index.html')
+    search_form = forms.SearchForm()
+    if search_form.validate_on_submit():
+        return redirect(url_for('index'))
+    return render_template('index.html', form=search_form)
 
 
 # ### RAID FUNCTIONS ### #

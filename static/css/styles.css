@@ -1,9 +1,22 @@
 body {
     font-family: 'Ubuntu', sans-serif;
+    align: center;
 }
 
 h1 {
     font-size: 3.5rem;
     line-height: 1.5;
     font-weight: 900;
+}
+.search_form {
+    padding: 0% 35%;
+    text-align: center;
+}
+
+.search_form_elements {
+    margin: 7px;
+}
+
+.form {
+    margin: 7px;
 }
