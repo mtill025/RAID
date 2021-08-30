@@ -17,6 +17,12 @@ class AirWatchController:
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
             self.platform = "AirWatch"
+            if 'SerialNumber' in self.dict:
+                self.serial = self.SerialNumber
+            if 'DeviceFriendlyName' in self.dict:
+                self.name = self.DeviceFriendlyName
+            if 'AssetNumber' in self.dict:
+                self.asset_tag = self.AssetNumber
 
     def __init__(self, api_url):
         """Wrapper for interacting with the AirWatch API."""

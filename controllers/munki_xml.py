@@ -19,9 +19,12 @@ def write_manifest(manifest, path):
 class MunkiController:
 
     class MunkiAsset(RaidAsset):
-        def __init__(self, assetinfo):
+        def __init__(self, assetinfo, serial=""):
             super().__init__(assetinfo)
             self.platform = "Munki"
+            self.serial = serial
+            if 'display_name' in self.dict:
+                self.name = self.display_name
 
     def __init__(self, repo_path):
         """Wrapper for interacting with a Munki repository."""
@@ -34,7 +37,7 @@ class MunkiController:
         manifest_path = self.manifest_dir + f"/{name}"
         if os.path.exists(manifest_path):
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest)
+            return self.MunkiAsset(manifest, serial=name)
         return self.MunkiAsset(RaidResponse('302').json)
 
     def update_asset_name(self, serial, new_name):
@@ -45,7 +48,7 @@ class MunkiController:
             manifest['display_name'] = new_name
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest)
+            return self.MunkiAsset(manifest, serial=serial)
         return self.MunkiAsset(RaidResponse('302').json)
 
     def add_asset_group(self, serial, group):
@@ -56,7 +59,7 @@ class MunkiController:
             manifest['included_manifests'].append(group)
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest)
+            return self.MunkiAsset(manifest, serial=serial)
         return self.MunkiAsset(RaidResponse('302').json)
 
     def remove_asset_group(self, serial, group):
@@ -68,7 +71,7 @@ class MunkiController:
                 manifest['included_manifests'].remove(group)
                 write_manifest(manifest, manifest_path)
                 manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest)
+            return self.MunkiAsset(manifest, serial=serial)
         return self.MunkiAsset(RaidResponse('302').json)
 
     def clear_asset_groups(self, serial):
@@ -79,7 +82,7 @@ class MunkiController:
             manifest['included_manifests'] = []
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest)
+            return self.MunkiAsset(manifest, serial=serial)
         return self.MunkiAsset(RaidResponse('302').json)
 
 

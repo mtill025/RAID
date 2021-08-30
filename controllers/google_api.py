@@ -40,6 +40,12 @@ class GoogleController:
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
             self.platform = "Google"
+            if 'serialNumber' in self.dict:
+                self.serial = self.serialNumber
+            if 'annotatedAssetId' in self.dict:
+                self.name = self.annotatedAssetId
+            if 'notes' in self.dict:
+                self.asset_tag = self.notes
 
     def __init__(self):
         """Wrapper for interacting with the Google Admin API."""
