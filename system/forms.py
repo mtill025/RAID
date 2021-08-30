@@ -4,7 +4,7 @@ from wtforms.validators import DataRequired, URL
 
 
 class SearchForm(FlaskForm):
-    type = SelectField("Search by", choices=['Serial Number', 'Asset Tag'])
+    type = SelectField("Search by", choices=['Asset Tag', 'Serial Number'])
     identifier = StringField("Number", validators=[DataRequired()])
     submit = SubmitField("Search")
 

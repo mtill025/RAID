@@ -32,6 +32,9 @@ class RaidAsset:
     def __init__(self, assetinfo: dict):
         self.dict = assetinfo
         self.platform = "RAID"
+        self.serial = ""
+        self.name = ""
+        self.asset_tag = ""
         if 'raid_code' not in self.dict:
             self.dict['raid_code'] = RaidResponse('200').json['raid_code']
         for key in assetinfo:

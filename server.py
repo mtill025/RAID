@@ -1,6 +1,6 @@
 from controllers import snipe_api, google_api, airwatch_api, munki_xml
 from system import forms
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
 from raid import RaidSettings
 import json
@@ -29,10 +29,24 @@ app.config['SECRET_KEY'] = settings.web_server['key']
 @app.route('/', methods=['POST', 'GET'])
 def index():
     search_form = forms.SearchForm()
-    if search_form.validate_on_submit():
-        return redirect(url_for('index'))
+    if request.method == 'POST':
+        search_by = search_form.type.data
+        search_num = search_form.identifier.data
+        if search_by == "Asset Tag":
+            asset = snipe.search_by_asset_tag(search_num)
+            if 'serial' in asset.dict:
+                search_num = asset.serial
+        results = raid_search(search_num)
+        # for item in results:
+        #     if results[item] is not None:
+        #         print(results[item].name)
+        return render_template('index.html', form=search_form, results=results)
     return render_template('index.html', form=search_form)
 
+
+@app.route('/results', methods=['POST', 'GET'])
+def show_results():
+    pass
 
 # ### RAID FUNCTIONS ### #
 
@@ -118,4 +132,4 @@ def raid_update_asset_tag(serial, new_tag):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
