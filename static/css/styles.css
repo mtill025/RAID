@@ -1,6 +1,5 @@
 body {
     font-family: 'Ubuntu', sans-serif;
-    align: center;
 }
 
 .navbar {
@@ -17,7 +16,7 @@ body {
     margin: 30px;
 }
 
-.row-edit {
+.row-login {
     margin: 30px;
 }
 
@@ -33,3 +32,35 @@ body {
     margin: 7px;
 }
 
+.read-only-input {
+    background-color: #c9d6df;
+    border: 0;
+}
+
+.table td {
+    text-align: center;
+}
+
+.table th {
+    text-align: center;
+}
+
+.raid-log {
+    text-align: center;
+}
+
+.flashes {
+    list-style-type: none;
+    color: white;
+    text-align: center;
+}
+
+.flash-success {
+    background-color: #1c7430;
+    border: 1px solid white;
+}
+
+.flash-error {
+    background-color: #ac0e14;
+    border: 1px solid white;
+}
