@@ -1,34 +1,77 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% include "header.html" %}
 
-
 <div class="container">
     <div class="row row-search">
         <div class="search_form">
             <form method="post" class="form" role="form">
                 <div class="form-group">
-<!--                    {{ form.type.label }}-->
-                    {{ form.type(class_="search_form_elements") }}
+                    {{ search_form.type(class_="form_elements") }}
                 </div>
                 <div class="form-group">
-<!--                    {{ form.identifier.label }}-->
-                    {{ form.identifier(class_="search_form_elements", size=14) }}
+                    {{ search_form.identifier(class_="form_elements", size=14) }}
                 </div>
-                {{ form.submit(class_="search_form_elements btn btn-dark") }}
+                {{ search_form.search_submit(class_="form_elements btn btn-dark") }}
             </form>
         </div>
     </div>
-    <div class="row row-results">
-        {% for platform in results: %}
-            {% if results[platform]: %}
-                <div class="col-md-3">
-                    <h2>{{ results[platform].platform }}</h2>
-                    <p>Name: {{ results[platform].name }}</p>
-                    <p>Asset Tag: {{ results[platform].asset_tag }}</p>
-                    <p>Serial: {{ results[platform].serial }}</p>
+    {% if results: %}
+    <div class="row row-results-tbl">
+        <table class="table table-hover">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col"><button href="#editForm" class="btn btn-dark" type="button" data-bs-toggle="collapse" data-bs-target="#editForm" aria-expanded="false" aria-controls="editForm">Edit</button></th>
+                <th scope="col">Name</th>
+                <th scope="col">Asset Tag</th>
+                <th scope="col">Serial Number</th>
+                <th scope="col">Org Unit</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for platform in results: %}
+                {% if results[platform]: %}
+                    <tr>
+                    <th scope="row">{{ results[platform].platform }}</th>
+                    <td>{{ results[platform].name }}</td>
+                    <td>{{ results[platform].asset_tag }}</td>
+                    <td>{{ results[platform].serial }}</td>
+                    <td>{{ results[platform].org_unit }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+            </table>
+    </div>
+    {% endif %}
+    <div class="collapse" id="editForm">
+        <div class="card card-body">
+            <div class="row row-edit">
+                <div class="edit_form">
+                    <form method="post" action="{{ url_for('edit') }}" class="form" role="form">
+                        <div class="form-group">
+                            {{ edit_form.serial.label }}
+                            {{ edit_form.serial(class_="form_elements") }}
+                        </div>
+                        <div class="form-group">
+                            {{ edit_form.asset_tag.label }}
+                            {{ edit_form.asset_tag(class_="form_elements", size=16) }}
+                        </div>
+                        <div class="form-group">
+                            {{ edit_form.name.label }}
+                            {{ edit_form.name(class_="form_elements") }}
+                        </div>
+                        <div class="form-group">
+                            {{ edit_form.building.label }}
+                            {{ edit_form.building(class_="form_elements") }}
+                        </div>
+                        <div class="form-group">
+                            {{ edit_form.group.label }}
+                            {{ edit_form.group(class_="form_elements") }}
+                        </div>
+                        {{ edit_form.edit_submit(class_="form_elements btn btn-dark") }}
+                    </form>
                 </div>
-            {% endif %}
-        {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
-

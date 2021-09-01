@@ -15,6 +15,8 @@ class SnipeController:
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
             self.platform = "Snipe"
+            if 'company' in self.dict:
+                self.org_unit = self.company['name']
 
     def __init__(self, api_url):
         """Wrapper for interacting with the Snipe API."""

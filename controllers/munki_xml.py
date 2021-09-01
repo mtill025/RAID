@@ -1,6 +1,7 @@
 from raid import RaidAsset, RaidResponse
 import os.path
 import plistlib
+import re
 
 
 def read_manifest(path):
@@ -25,6 +26,13 @@ class MunkiController:
             self.serial = serial
             if 'display_name' in self.dict:
                 self.name = self.display_name
+            if 'included_manifests' in self.dict:
+                self.org_unit = []
+                munki_groups = self.included_manifests
+                regex = re.compile('groups/[AELIMH][BS]Staff\\Z|groups/[AELIMH][BS]Student\\Z')
+                for group in munki_groups:
+                    if regex.match(group):
+                        self.org_unit.append(group)
 
     def __init__(self, repo_path):
         """Wrapper for interacting with a Munki repository."""
@@ -56,6 +64,25 @@ class MunkiController:
         manifest_path = self.manifest_dir + f"/{serial}"
         if os.path.exists(manifest_path):
             manifest = read_manifest(manifest_path)
+            if group not in manifest['included_manifests']:
+                manifest['included_manifests'].append(group)
+                write_manifest(manifest, manifest_path)
+                manifest = read_manifest(manifest_path)
+            return self.MunkiAsset(manifest, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json)
+
+    def update_asset_main_group(self, serial, group):
+        """Adds group (included_manifest) to specified manifest."""
+        manifest_path = self.manifest_dir + f"/{serial}"
+        if os.path.exists(manifest_path):
+            manifest = read_manifest(manifest_path)
+            regex = re.compile('groups/[AELIMH][BS]Staff\\Z|groups/[AELIMH][BS]Student\\Z')
+            current_main_groups = []
+            for grp in manifest['included_manifests']:
+                if regex.match(grp):
+                    current_main_groups.append(grp)
+            for grp in current_main_groups:
+                manifest['included_manifests'].remove(grp)
             manifest['included_manifests'].append(group)
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)

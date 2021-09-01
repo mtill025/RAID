@@ -23,6 +23,8 @@ class AirWatchController:
                 self.name = self.DeviceFriendlyName
             if 'AssetNumber' in self.dict:
                 self.asset_tag = self.AssetNumber
+            if 'LocationGroupName' in self.dict:
+                self.org_unit = self.LocationGroupName
 
     def __init__(self, api_url):
         """Wrapper for interacting with the AirWatch API."""

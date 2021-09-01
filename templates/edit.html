@@ -1,0 +1,22 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% include "header.html" %}
+
+<div class="row row-edit">
+    <div class="edit_form">
+        <form method="post" class="form" role="form">
+            <div class="form-group">
+                {{ form.serial.label }}
+                {{ form.serial(class_="form_elements") }}
+            </div>
+            <div class="form-group">
+                {{ form.asset_tag.label }}
+                {{ form.asset_tag(class_="form_elements") }}
+            </div>
+            <div class="form-group">
+                {{ form.name.label }}
+                {{ form.name(class_="form_elements") }}
+            </div>
+            {{ form.submit(class_="form_elements btn btn-dark") }}
+        </form>
+    </div>
+</div>

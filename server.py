@@ -13,6 +13,10 @@ if os.path.exists(SETTINGS_FILE):
     with open(SETTINGS_FILE) as file:
         settings = RaidSettings(json.load(file))
 
+# Import org mapping
+with open('config/org_mapping.json') as file:
+    org_map = RaidSettings(json.load(file))
+
 google = google_api.GoogleController()
 snipe = snipe_api.SnipeController(settings.controller_urls['snipe'])
 aw = airwatch_api.AirWatchController(settings.controller_urls['airwatch'])
@@ -29,6 +33,11 @@ app.config['SECRET_KEY'] = settings.web_server['key']
 @app.route('/', methods=['POST', 'GET'])
 def index():
     search_form = forms.SearchForm()
+    edit_form = forms.EditForm()
+    building_choices = org_map.org_choices['buildings']
+    group_choices = org_map.org_choices['groups']
+    edit_form.building.choices = building_choices
+    edit_form.group.choices = group_choices
     if request.method == 'POST':
         search_by = search_form.type.data
         search_num = search_form.identifier.data
@@ -36,17 +45,25 @@ def index():
             asset = snipe.search_by_asset_tag(search_num)
             if 'serial' in asset.dict:
                 search_num = asset.serial
+        edit_form.serial.data = search_num
         results = raid_search(search_num)
-        # for item in results:
-        #     if results[item] is not None:
-        #         print(results[item].name)
-        return render_template('index.html', form=search_form, results=results)
-    return render_template('index.html', form=search_form)
+        return render_template('index.html', search_form=search_form, edit_form=edit_form, results=results)
+    return render_template('index.html', search_form=search_form, edit_form=edit_form)
 
 
-@app.route('/results', methods=['POST', 'GET'])
-def show_results():
-    pass
+@app.route('/edit', methods=['POST'])
+def edit():
+    if request.method == 'POST':
+        serial = request.form['serial']
+        new_name = request.form['name']
+        new_asset_tag = request.form['asset_tag']
+        new_building = request.form['building']
+        new_group = request.form['group']
+        raid_update_asset_name(serial, new_name)
+        raid_update_asset_tag(serial, new_asset_tag)
+        raid_update_asset_org(serial, new_building, new_group)
+    return redirect(url_for('index'))
+
 
 # ### RAID FUNCTIONS ### #
 
@@ -67,7 +84,7 @@ def raid_search(serial):
         'munki': None,
     }
     if platform == "Chrome":
-        results['google'] = google.search(serial)
+        results['google'] = google.search(serial, level="FULL")
     elif platform is not None:
         results['airwatch'] = aw.search(serial)
         if platform == "Mac":
@@ -96,21 +113,18 @@ def raid_update_asset_org(serial, building, type):
     building = building.lower()
     type = type.lower()
     platform = get_platform(serial)
-    with open('config/org_mapping.json') as file:
-        org_map = json.load(file)
     results = {
-        'snipe': snipe.update_asset_company(serial, org_map['snipe'][building][type]),
+        'snipe': snipe.update_asset_company(serial, org_map.snipe[building][type]),
         'google': None,
         'airwatch': None,
         'munki': None,
     }
     if platform == "Chrome":
-        results['google'] = google.update_asset_org(serial, org_map['google'][building][type])
+        results['google'] = google.update_asset_org(serial, org_map.google[building][type])
     elif platform is not None:
-        results['airwatch'] = aw.update_asset_org(serial, org_map['airwatch'][building][type])
+        results['airwatch'] = aw.update_asset_org(serial, org_map.airwatch[building][type])
         if platform == "Mac":
-            munki.clear_asset_groups(serial)
-            results['munki'] = munki.add_asset_group(serial, org_map['munki'][building][type])
+            results['munki'] = munki.update_asset_main_group(serial, org_map.munki[building][type])
     return results
 
 

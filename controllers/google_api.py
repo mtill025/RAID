@@ -46,6 +46,8 @@ class GoogleController:
                 self.name = self.annotatedAssetId
             if 'notes' in self.dict:
                 self.asset_tag = self.notes
+            if 'orgUnitPath' in self.dict:
+                self.org_unit = self.orgUnitPath
 
     def __init__(self):
         """Wrapper for interacting with the Google Admin API."""
