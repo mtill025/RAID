@@ -2,20 +2,31 @@
 {% include "header.html" %}
 
 <div class="container">
-    <div class="row row-search">
-        <div class="search_form">
-            <form method="post" class="form" role="form">
-                <div class="form-group">
-                    {{ search_form.type(class_="form_elements") }}
-                </div>
-                <div class="form-group">
-                    {{ search_form.identifier(class_="form_elements", size=14) }}
-                </div>
-                {{ search_form.search_submit(class_="form_elements btn btn-dark") }}
-            </form>
+    <div class="row row-login">
+        <div class="col-lg-4 offset-lg-4">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+            <div class="search_form">
+                <form method="post" class="form" role="form">
+                    <div class="form-group">
+                        {{ search_form.type(class_="form_elements") }}
+                    </div>
+                    <div class="form-group">
+                        {{ search_form.identifier(class_="form_elements", size=14) }}
+                    </div>
+                    {{ search_form.search_submit(class_="form_elements btn btn-dark") }}
+                </form>
+            </div>
         </div>
     </div>
-    {% if results: %}
+    {% if results %}
     <div class="row row-results-tbl">
         <table class="table table-hover">
             <thead class="thead-dark">
@@ -28,14 +39,18 @@
             </tr>
             </thead>
             <tbody>
-            {% for platform in results: %}
-                {% if results[platform]: %}
+            {% for platform in results %}
+                {% if results[platform] %}
                     <tr>
                     <th scope="row">{{ results[platform].platform }}</th>
                     <td>{{ results[platform].name }}</td>
                     <td>{{ results[platform].asset_tag }}</td>
                     <td>{{ results[platform].serial }}</td>
-                    <td>{{ results[platform].org_unit }}</td>
+                        {% if results[platform].org_unit is not string %}
+                            <td>{{ ', '.join(results[platform].org_unit) }}</td>
+                        {% else %}
+                            <td>{{ results[platform].org_unit }}</td>
+                        {% endif %}
                     </tr>
                 {% endif %}
             {% endfor %}
@@ -50,7 +65,7 @@
                     <form method="post" action="{{ url_for('edit') }}" class="form" role="form">
                         <div class="form-group">
                             {{ edit_form.serial.label }}
-                            {{ edit_form.serial(class_="form_elements") }}
+                            {{ edit_form.serial(class_="form_elements read-only-input") }}
                         </div>
                         <div class="form-group">
                             {{ edit_form.asset_tag.label }}
