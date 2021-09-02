@@ -194,6 +194,31 @@ def edit():
     return redirect(url_for('index'))
 
 
+@app.route('/admin', methods=['GET', 'POST'])
+@admin_only
+def admin():
+    register_form = forms.RegisterUserForm()
+    if request.method == 'POST':
+        username = register_form.username.data
+        password = register_form.password.data
+        role = register_form.role.data
+        user = User.query.filter(User.username == username).first()
+        if not user:
+            new_user = User(
+                username=username,
+                password=generate_password_hash(
+                    password=password,
+                    method='pbkdf2:sha256',
+                    salt_length=8
+                ),
+                role=role,
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect(url_for('admin'))
+    return render_template('admin.html', form=register_form, logged_in=current_user.is_authenticated)
+
+
 # ### RAID FUNCTIONS ### #
 
 
