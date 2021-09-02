@@ -19,6 +19,9 @@
     <div class="container">
         <a class="navbar-brand" href="{{url_for('index')}}">RAID</a>
         <ul class="navbar-nav ml-auto">
+            {% if current_user.role == 1 %}
+                <a class="nav-link" href="{{ url_for('admin') }}">Admin Settings</a>
+            {% endif %}
             {% if logged_in %}
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('logout') }}">Log Out</a>
