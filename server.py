@@ -10,11 +10,13 @@ from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 import json
 import os
+import datetime
 
-# TODO: Register new user page
+# TODO: Register new user page - style, title, scrollable?
 # TODO: See history of commands
 # TODO: Admin settings page for initial API authentication/settings and org map creation
 # TODO: Overhaul settings file?
+# TODO: Automatic updates
 # TODO: Clean up/comment/get ready for deployment
 
 SETTINGS_FILE = "config/settings.json"
@@ -55,15 +57,16 @@ login_manager.init_app(app)
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(250), unique=True, nullable=False)
-    password = db.Column(db.String(250), nullable=False)
+    username = db.Column(db.String(30), unique=True, nullable=False)
+    password = db.Column(db.String(20), nullable=False)
     role = db.Column(db.Integer, nullable=False)
-    commands = relationship("Commands", back_populates="submitter")
+    commands = relationship("Command", back_populates="submitter")
 
 
-class Commands(db.Model):
+class Command(db.Model):
     __tablename__ = "commands"
     id = db.Column(db.Integer, primary_key=True)
+    datetime = db.Column(db.String(30), nullable=False)
     serial = db.Column(db.String(250), nullable=False)
     asset_tag = db.Column(db.String(250), nullable=False)
     name = db.Column(db.String(250), nullable=False)
@@ -191,7 +194,27 @@ def edit():
                     else:
                         flash(f"{asset.platform} Error {asset.raid_code['code']}: {asset.raid_code['message']}",
                               "flash-error")
+        new_command = Command(
+            datetime=datetime.datetime.now().strftime("%Y-%m-%d %-I:%M %p"),
+            serial=serial,
+            name=new_name,
+            asset_tag=new_asset_tag,
+            building=new_building,
+            group=new_group,
+            submitter_id=current_user.id
+        )
+        db.session.add(new_command)
+        db.session.commit()
     return redirect(url_for('index'))
+
+
+@app.route('/delete/<userid>')
+@admin_only
+def delete(userid):
+    if current_user.id != int(userid):
+        db.session.delete(User.query.get(userid))
+        db.session.commit()
+    return redirect(url_for('admin'))
 
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -216,7 +239,18 @@ def admin():
             db.session.add(new_user)
             db.session.commit()
             return redirect(url_for('admin'))
-    return render_template('admin.html', form=register_form, logged_in=current_user.is_authenticated)
+        else:
+            user.password = generate_password_hash(
+                password=password,
+                method='pbkdf2:sha256',
+                salt_length=8
+            )
+            user.role = role
+            db.session.commit()
+    commands = Command.query.order_by(Command.id.desc()).limit(10)
+    users = User.query.all()
+    return render_template('admin.html', form=register_form, logged_in=current_user.is_authenticated,
+                           commands=commands, users=users)
 
 
 # ### RAID FUNCTIONS ### #
