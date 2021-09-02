@@ -24,6 +24,10 @@ body {
     text-align: center;
 }
 
+.row-admin {
+    margin: 30px;
+}
+
 .form {
     text-align: center;
 }
