@@ -13,7 +13,7 @@ class RegisterUserForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     role = SelectField("Role", choices=[(1, 'Admin'), (2, 'User')])
-    register_submit = SubmitField("Add User")
+    register_submit = SubmitField("Add/Edit User")
 
 
 class SearchForm(FlaskForm):
