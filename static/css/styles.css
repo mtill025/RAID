@@ -24,7 +24,7 @@ body {
     text-align: center;
 }
 
-.row-admin {
+.row-admin-1 {
     margin: 30px;
 }
 
@@ -67,4 +67,9 @@ body {
 .flash-error {
     background-color: #ac0e14;
     border: 1px solid white;
+}
+
+.btn-delete-user {
+    line-height: 1;
+    font-size: 80%;
 }
