@@ -1,0 +1,16 @@
+{
+  "org_choices": {
+    "buildings": [
+    ],
+    "groups": [
+    ]
+  },
+  "google": {
+  },
+  "airwatch": {
+  },
+  "snipe": {
+  },
+  "munki": {
+  }
+}
