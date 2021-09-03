@@ -4,33 +4,36 @@
 <div class="container">
     <div class="row row-admin-1">
         <div class="col-lg-6">
-            <table class="table table-hover">
-                <thead class="thead-dark">
-                <tr>
-                    <th scope="col">Username</th>
-                    <th scope="col">Role</th>
-                    <th scope="col"></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for user in users %}
-                    <tr>
-                        <td>{{ user.username }}</td>
-                        {% if user.role == 1 %}
-                            <td>Admin</td>
-                        {% elif user.role == 2 %}
-                            <td>User</td>
-                        {% endif %}
-                        {% if current_user.id != user.id %}
-                            <td><button href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user">X</button></td>
-                        {% else %}
-                            <td><button disabled href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user">X</button></td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-                </table>
-        </div>
+            <p class="table-title">Users</p>
+                <div class="table-users">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Username</th>
+                            <th scope="col">Role</th>
+                            <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                {% if user.role == 1 %}
+                                    <td>Admin</td>
+                                {% elif user.role == 2 %}
+                                    <td>User</td>
+                                {% endif %}
+                                {% if current_user.id != user.id %}
+                                    <td><a href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user">X</a></td>
+                                {% else %}
+                                    <td><a href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user disabled">X</a></td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         <div class="col-lg-6">
             {% with messages = get_flashed_messages(with_categories=True) %}
                 {% if messages %}
@@ -55,15 +58,16 @@
                         {{ form.role.label }}
                         {{ form.role(class_="form_elements") }}
                     </div>
-                    {{ form.register_submit(class_="form_elements btn btn-dark") }}
+                    {{ form.register_submit(class_="form_elements btn btn-raid") }}
                 </form>
             </div>
         </div>
     </div>
     <div class="row row-admin-2">
-        <div class="col-lg-12">
+        <div class="col-lg-12 border">
+            <p class="table-title">History</p>
             <table class="table table-hover">
-                <thead class="thead-dark">
+                <thead class="table-dark">
                 <tr>
                     <th scope="col">Date</th>
                     <th scope="col">User</th>
