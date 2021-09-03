@@ -9,38 +9,44 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 import json
+import configparser
 import os
 import datetime
 
-# TODO: Register new user page - style, title, scrollable?
-# TODO: See history of commands
-# TODO: Admin settings page for initial API authentication/settings and org map creation
-# TODO: Overhaul settings file?
 # TODO: Automatic updates
 # TODO: Clean up/comment/get ready for deployment
 
-SETTINGS_FILE = "config/settings.json"
+SETTINGS_FILE = "config/settings.cfg"
+SETTINGS_TEMP_FILE = "system/settings_template.cfg"
 ORG_MAP_FILE = "config/org_mapping.json"
+ORG_MAP_TEMP_FILE = "system/org_mapping_template.json"
 
 # Import settings
-if os.path.exists(SETTINGS_FILE):
-    with open(SETTINGS_FILE) as file:
-        settings = RaidSettings(json.load(file))
+settings = configparser.ConfigParser()
+if not os.path.exists(SETTINGS_FILE):
+    settings.read(SETTINGS_TEMP_FILE)
+    with open(SETTINGS_FILE, 'w') as file:
+        settings.write(file)
+settings.read(SETTINGS_FILE)
 
 # Import org mapping
-if os.path.exists(ORG_MAP_FILE):
-    with open(ORG_MAP_FILE) as file:
-        org_map = RaidSettings(json.load(file))
+if not os.path.exists(ORG_MAP_FILE):
+    with open(ORG_MAP_TEMP_FILE) as file:
+        org_map = json.load(file)
+    with open(ORG_MAP_FILE, 'w') as file:
+        json.dump(org_map, file)
+with open(ORG_MAP_FILE) as file:
+    org_map = RaidSettings(json.load(file))
 
 google = google_api.GoogleController()
-snipe = snipe_api.SnipeController(settings.controller_urls['snipe'])
-aw = airwatch_api.AirWatchController(settings.controller_urls['airwatch'])
-munki = munki_xml.MunkiController(settings.controller_urls['munki'])
+snipe = snipe_api.SnipeController(settings['urls']['snipe'])
+aw = airwatch_api.AirWatchController(settings['urls']['airwatch'])
+munki = munki_xml.MunkiController(settings['urls']['munki'])
 
 # Web server
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
-app.config['SECRET_KEY'] = settings.web_server['key']
+app.config['SECRET_KEY'] = settings['web_server']['key']
 
 # Connect to database
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///config/raid.db'
@@ -334,4 +340,6 @@ def raid_update_asset_tag(serial, new_tag):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True)
+    from waitress import serve
+    serve(app, host='0.0.0.0')
