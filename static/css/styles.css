@@ -3,7 +3,7 @@ body {
 }
 
 .navbar {
-    background-color: #52616B;
+    background-color: #31424c;
 }
 
 .navbar-brand {
@@ -73,3 +73,36 @@ body {
     line-height: 1;
     font-size: 80%;
 }
+
+.table-users {
+    height: 212px;
+    overflow: auto;
+}
+
+thead tr:nth-child(1) th {
+    background: #31424c;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.btn-raid {
+    background-color: #31424c;
+    color: white;
+}
+
+.btn-raid:hover {
+    background-color: #4b5860;
+    color: white;
+}
+
+.table-title {
+    text-align: center;
+    font-size: 2rem;
+}
+
+.register-form {
+    margin-top: 85px;
+}
+
+
