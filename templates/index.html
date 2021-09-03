@@ -21,7 +21,7 @@
                     <div class="form-group">
                         {{ search_form.identifier(class_="form_elements", size=14) }}
                     </div>
-                    {{ search_form.search_submit(class_="form_elements btn btn-dark") }}
+                    {{ search_form.search_submit(class_="form_elements btn btn-raid") }}
                 </form>
             </div>
         </div>
@@ -29,9 +29,9 @@
     {% if results %}
     <div class="row row-results-tbl">
         <table class="table table-hover">
-            <thead class="thead-dark">
+            <thead class="table-dark">
             <tr>
-                <th scope="col"><button href="#editForm" class="btn btn-dark" type="button" data-bs-toggle="collapse" data-bs-target="#editForm" aria-expanded="false" aria-controls="editForm">Edit</button></th>
+                <th scope="col"><button href="#editForm" class="btn btn-danger btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#editForm" aria-expanded="false" aria-controls="editForm">Edit</button></th>
                 <th scope="col">Name</th>
                 <th scope="col">Asset Tag</th>
                 <th scope="col">Serial Number</th>
@@ -83,7 +83,7 @@
                             {{ edit_form.group.label }}
                             {{ edit_form.group(class_="form_elements") }}
                         </div>
-                        {{ edit_form.edit_submit(class_="form_elements btn btn-dark") }}
+                        {{ edit_form.edit_submit(class_="form_elements btn btn-danger") }}
                     </form>
                 </div>
             </div>
