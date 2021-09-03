@@ -4,3 +4,6 @@
 test.py
 /secrets/
 /config/
+/dist/
+/build/
+setup.py
