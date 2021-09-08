@@ -1,5 +1,3 @@
-# TODO: Settings file
-
 
 class RaidResponse:
 
