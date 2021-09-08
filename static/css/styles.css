@@ -1,5 +1,9 @@
+
+/*Header*/
+
 body {
     font-family: 'Ubuntu', sans-serif;
+    text-align: center;
 }
 
 .navbar {
@@ -12,6 +16,12 @@ body {
     font-weight: 900;
 }
 
+.navbar-version {
+    font-size: 1rem;
+}
+
+/* Bootstrap Rows*/
+
 .row-search {
     margin: 30px;
 }
@@ -20,17 +30,11 @@ body {
     margin: 30px;
 }
 
-.row-results {
-    text-align: center;
-}
-
 .row-admin-1 {
     margin: 30px;
 }
 
-.form {
-    text-align: center;
-}
+/*Forms*/
 
 .form_elements {
     margin: 7px;
@@ -41,17 +45,11 @@ body {
     border: 0;
 }
 
-.table td {
-    text-align: center;
+.register-form {
+    margin-top: 85px;
 }
 
-.table th {
-    text-align: center;
-}
-
-.raid-log {
-    text-align: center;
-}
+/*Flashes*/
 
 .flashes {
     list-style-type: none;
@@ -69,10 +67,24 @@ body {
     border: 1px solid white;
 }
 
+/*Custom Buttons*/
+
 .btn-delete-user {
     line-height: 1;
     font-size: 80%;
 }
+
+.btn-raid {
+    background-color: #31424c;
+    color: white;
+}
+
+.btn-raid:hover {
+    background-color: #4b5860;
+    color: white;
+}
+
+/*Tables*/
 
 .table-users {
     height: 212px;
@@ -86,23 +98,8 @@ thead tr:nth-child(1) th {
     z-index: 10;
 }
 
-.btn-raid {
-    background-color: #31424c;
-    color: white;
-}
-
-.btn-raid:hover {
-    background-color: #4b5860;
-    color: white;
-}
-
 .table-title {
     text-align: center;
     font-size: 2rem;
 }
-
-.register-form {
-    margin-top: 85px;
-}
-
 
