@@ -17,10 +17,12 @@
   <!-- Navigation -->
   <nav class="navbar navbar-dark" id="mainNav">
     <div class="container">
-        <a class="navbar-brand" href="{{url_for('index')}}">RAID</a>
+        <a class="navbar-brand" href="{{url_for('index')}}">RAID<span class="navbar-text navbar-version">  v1.0.0</span></a>
         <ul class="navbar-nav ml-auto">
             {% if current_user.role == 1 %}
-                <a class="nav-link" href="{{ url_for('admin') }}">Admin Settings</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin') }}">Admin Settings</a>
+                </li>
             {% endif %}
             {% if logged_in %}
               <li class="nav-item">
