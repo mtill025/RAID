@@ -12,13 +12,14 @@ import json
 import configparser
 import os
 import datetime
-
+import logging
 
 # Set paths for template and system files
 SETTINGS_FILE = "config/settings.cfg"
 SETTINGS_TEMP_FILE = "system/settings_template.cfg"
 ORG_MAP_FILE = "config/org_mapping.json"
 ORG_MAP_TEMP_FILE = "system/org_mapping_template.json"
+LOG_FILE = "error.log"
 
 # Import settings. Create from template if file does not exist.
 settings = configparser.ConfigParser()
@@ -57,6 +58,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
 # Database tables
 class User(UserMixin, db.Model):
     __tablename__ = "users"
@@ -84,6 +86,7 @@ class Command(db.Model):
 if not os.path.exists("config/raid.db"):
     db.create_all()
 
+
 # Decorator for requiring admin to access pages
 def admin_only(function):
     @wraps(function)
@@ -91,12 +94,14 @@ def admin_only(function):
         if not current_user.is_authenticated or current_user.role != 1:
             return abort(403)
         return function(*args, **kwargs)
+
     return wrap_fn
 
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
 
 # ### WEB SERVER ROUTES ### #
 @app.route('/login', methods=['POST', 'GET'])
@@ -160,7 +165,19 @@ def index():
             asset = snipe.search_by_asset_tag(search_num)
             if 'serial' in asset.dict:
                 search_num = asset.serial
-        results = raid_search(search_num)
+        # Wrap search function in a try block in order to log errors
+        try:
+            results = raid_search(search_num)
+        except Exception as e:
+            if os.path.exists(LOG_FILE):
+                with open(LOG_FILE, 'a') as log:
+                    log.write(f'\n{datetime.datetime.now().strftime("%Y-%m-%d %-I:%M:%S %p")}: {e}')
+            else:
+                with open(LOG_FILE, 'w') as log:
+                    log.write(f'{datetime.datetime.now().strftime("%Y-%m-%d %-I:%M:%S %p")}: {e}')
+            logging.exception(e)
+            flash("Unknown error, please check logs for more info.", "flash-error")
+            return redirect(url_for('index'))
         # Pre-populate fields in edit form with info found in Snipe
         edit_form.serial.data = results['snipe'].serial
         edit_form.name.data = results['snipe'].name
@@ -175,8 +192,15 @@ def index():
             edit_form.group.data = "Student"
         elif results['google'] and results['google'].org_unit.find("Student") != -1:
             edit_form.group.data = "Student"
-        return render_template('index.html', search_form=search_form, edit_form=edit_form, results=results,
-                               logged_in=current_user.is_authenticated)
+        # If asset could not be found in snipe, don't show table and flash error message
+        if results['snipe'].raid_code['code'] == '302':
+            flash(f"Snipe Error {results['snipe'].raid_code['code']}: {results['snipe'].raid_code['message']}",
+                  "flash-error")
+            return render_template('index.html', search_form=search_form, edit_form=edit_form,
+                                   logged_in=current_user.is_authenticated)
+        else:
+            return render_template('index.html', search_form=search_form, edit_form=edit_form, results=results,
+                                   logged_in=current_user.is_authenticated)
     return render_template('index.html', search_form=search_form, edit_form=edit_form,
                            logged_in=current_user.is_authenticated)
 
