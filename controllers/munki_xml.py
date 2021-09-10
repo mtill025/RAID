@@ -45,7 +45,7 @@ class MunkiController:
         manifest_path = self.manifest_dir + f"/{name}"
         if os.path.exists(manifest_path):
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=name)
+            return self.MunkiAsset(manifest, serial=name.upper())
         return self.MunkiAsset(RaidResponse('302').json)
 
     def update_asset_name(self, serial, new_name):
