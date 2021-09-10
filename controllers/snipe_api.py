@@ -151,7 +151,10 @@ class SnipeController:
     def update_asset_tag(self, serial, new_tag):
         """Updates asset's inventory tag number in Snipe.
         Returns RaidAsset object."""
-        if "id" in self.search_by_asset_tag(new_tag).dict:
+        asset = self.search_by_asset_tag(new_tag)
+        if "id" in asset.dict:
+            if asset.serial == serial:
+                return self.SnipeAsset(RaidResponse('200').json)
             return self.SnipeAsset(RaidResponse('401').json)
         snipe_id = self.get_snipe_id(serial)
         url = f"/hardware/{snipe_id}"
