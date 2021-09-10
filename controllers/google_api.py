@@ -61,6 +61,7 @@ class GoogleController:
 
     def search(self, serial, level="BASIC"):
         """Searches Google for serial number. Returns RaidAsset object. """
+        self.google_auth.refresh_creds()
         results = self.service.chromeosdevices().list(customerId="my_customer", query=serial,
                                                       projection=level).execute()
         if 'chromeosdevices' not in results:
@@ -71,6 +72,7 @@ class GoogleController:
         return self.GoogleAsset(results['chromeosdevices'][0])
 
     def update_asset(self, attr, serial, new_data):
+        self.google_auth.refresh_creds()
         """Updates asset's provided attribute in Google. See Google Admin SDK API docs for valid attribute names.
         Returns RaidAsset object."""
         result = self.get_device_id(serial)
@@ -88,16 +90,19 @@ class GoogleController:
     def update_asset_name(self, serial, new_name):
         """Updates asset's name (Asset ID in Google speak) in Google.
         Returns RaidAsset object."""
+        self.google_auth.refresh_creds()
         return self.update_asset("annotatedAssetId", serial, new_name)
 
     def update_asset_tag(self, serial, new_tag):
         """Updates asset's inventory tag number (Notes field) in Google.
         Returns RaidAsset object."""
+        self.google_auth.refresh_creds()
         return self.update_asset("notes", serial, new_tag)
 
     def update_asset_org(self, serial, new_org):
         """Updates asset's OU in Google.
         Returns RaidAsset object."""
+        self.google_auth.refresh_creds()
         result = self.get_device_id(serial)
         if result:
             payload = {
@@ -117,6 +122,7 @@ class GoogleController:
 
     def get_device_id(self, serial):
         """Returns assets Google device ID if found, otherwise returns None."""
+        self.google_auth.refresh_creds()
         result = self.search(serial)
         if result.raid_code['code'] == '200':
             return result.deviceId
