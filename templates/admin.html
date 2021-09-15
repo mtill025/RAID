@@ -2,6 +2,26 @@
 {% include "header.html" %}
 
 <div class="container">
+    <!-- User deletion modals -->
+    {%  for user in users %}
+        <div class="modal fade" id="{{ 'deleteUser' ~ user.id ~ 'Modal' }}" tabindex="-1" aria-labelledby="{{ 'deleteUser' ~ user.id ~ 'ModalLabel' }}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="{{ 'deleteUser' ~ user.id ~ 'ModalLabel' }}">Warning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to delete {{ user.username }}?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-raid" data-bs-dismiss="modal">Close</button>
+                <a type="button" href="{{ url_for('delete', userid=user.id) }}" class="btn btn-danger">Delete user</a>
+              </div>
+            </div>
+          </div>
+        </div>
+    {% endfor %}
     <div class="row row-admin-1">
         <div class="col-lg-6">
             <p class="table-title">Users</p>
@@ -24,7 +44,7 @@
                                     <td>User</td>
                                 {% endif %}
                                 {% if current_user.id != user.id %}
-                                    <td><a href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user">X</a></td>
+                                    <td><button type="button" class="btn btn-outline-danger btn-delete-user" data-bs-toggle="modal" data-bs-target="#{{ 'deleteUser' ~ user.id ~ 'Modal' }}">X</button></td>
                                 {% else %}
                                     <td><a href="{{ url_for('delete', userid=user.id) }}" class="btn btn-outline-danger btn-delete-user disabled">X</a></td>
                                 {% endif %}
@@ -91,7 +111,7 @@
                     </tr>
                 {% endfor %}
                 </tbody>
-                </table>
+            </table>
         </div>
     </div>
 </div>
