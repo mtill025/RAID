@@ -103,3 +103,11 @@ thead tr:nth-child(1) th {
     font-size: 2rem;
 }
 
+.table-inv-details {
+    text-align: left;
+}
+
+.table-inv-details th {
+    border-right: 1px solid #b9bbbe;
+    text-align: right;
+}
