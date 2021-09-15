@@ -14,12 +14,17 @@ import os
 import datetime
 import logging
 
+# Set the root RAID directory
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Set paths for template and system files
-SETTINGS_FILE = "config/settings.cfg"
-SETTINGS_TEMP_FILE = "system/settings_template.cfg"
-ORG_MAP_FILE = "config/org_mapping.json"
-ORG_MAP_TEMP_FILE = "system/org_mapping_template.json"
-LOG_FILE = "error.log"
+SETTINGS_FILE = f"{ROOT_DIR}/config/settings.cfg"
+SETTINGS_TEMP_FILE = f"{ROOT_DIR}/system/settings_template.cfg"
+ORG_MAP_FILE = f"{ROOT_DIR}/config/org_mapping.json"
+ORG_MAP_TEMP_FILE = f"{ROOT_DIR}/system/org_mapping_template.json"
+LOG_FILE = f"{ROOT_DIR}/error.log"
+DB_FILE = f"{ROOT_DIR}/config/raid.db"
+GOOGLE_CREDS_DIR = f"{ROOT_DIR}/secrets"
 
 # Import settings. Create from template if file does not exist.
 settings = configparser.ConfigParser()
@@ -39,10 +44,10 @@ with open(ORG_MAP_FILE) as file:
     org_map = RaidSettings(json.load(file))
 
 # Initialize API wrappers using parameters from SETTINGS_FILE
-google = google_api.GoogleController()
+google = google_api.GoogleController(GOOGLE_CREDS_DIR)
 snipe = snipe_api.SnipeController(settings['urls']['snipe'])
 aw = airwatch_api.AirWatchController(settings['urls']['airwatch'])
-munki = munki_xml.MunkiController(settings['urls']['munki'])
+munki = munki_xml.MunkiController(settings['urls']['munki'], settings['munki']['ou_regex'])
 
 # Initialize web server and configure secret key from SETTINGS_FILE
 app = Flask(__name__)
@@ -50,7 +55,7 @@ bootstrap = Bootstrap(app)
 app.config['SECRET_KEY'] = settings['web_server']['key']
 
 # Connect to database
-app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///config/raid.db'
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{DB_FILE}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -83,7 +88,7 @@ class Command(db.Model):
 
 
 # Create database if it does not exist
-if not os.path.exists("config/raid.db"):
+if not os.path.exists(DB_FILE):
     db.create_all()
 
 
