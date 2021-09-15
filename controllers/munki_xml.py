@@ -20,7 +20,7 @@ def write_manifest(manifest, path):
 class MunkiController:
 
     class MunkiAsset(RaidAsset):
-        def __init__(self, assetinfo, serial=""):
+        def __init__(self, assetinfo, ou_regex, serial=""):
             super().__init__(assetinfo)
             self.platform = "Munki"
             self.serial = serial
@@ -29,15 +29,16 @@ class MunkiController:
             if 'included_manifests' in self.dict:
                 self.org_unit = []
                 munki_groups = self.included_manifests
-                regex = re.compile('groups/[AELIMH][BS]Staff\\Z|groups/[AELIMH][BS]Student\\Z')
+                regex = re.compile(ou_regex)
                 for group in munki_groups:
                     if regex.match(group):
                         self.org_unit.append(group)
 
-    def __init__(self, repo_path):
+    def __init__(self, repo_path, ou_regex):
         """Wrapper for interacting with a Munki repository."""
         self.manifest_dir = f"{repo_path}/manifests"
         self.platform = "Munki"
+        self.ou_regex = ou_regex
 
     def search(self, name):
         """Searches Munki repository for manifest with name provided.
@@ -45,8 +46,8 @@ class MunkiController:
         manifest_path = self.manifest_dir + f"/{name}"
         if os.path.exists(manifest_path):
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=name.upper())
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=name.upper())
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
     def update_asset_name(self, serial, new_name):
         """Updates display_name in manifest with new_name."""
@@ -56,8 +57,8 @@ class MunkiController:
             manifest['display_name'] = new_name
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=serial)
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
     def add_asset_group(self, serial, group):
         """Adds group (included_manifest) to specified manifest."""
@@ -68,15 +69,15 @@ class MunkiController:
                 manifest['included_manifests'].append(group)
                 write_manifest(manifest, manifest_path)
                 manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=serial)
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
     def update_asset_main_group(self, serial, group):
         """Adds group (included_manifest) to specified manifest."""
         manifest_path = self.manifest_dir + f"/{serial}"
         if os.path.exists(manifest_path):
             manifest = read_manifest(manifest_path)
-            regex = re.compile('groups/[AELIMH][BS]Staff\\Z|groups/[AELIMH][BS]Student\\Z')
+            regex = re.compile(self.ou_regex)
             current_main_groups = []
             for grp in manifest['included_manifests']:
                 if regex.match(grp):
@@ -86,8 +87,8 @@ class MunkiController:
             manifest['included_manifests'].append(group)
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=serial)
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
     def remove_asset_group(self, serial, group):
         """Removes group (included_manifest) from specified manifest."""
@@ -98,8 +99,8 @@ class MunkiController:
                 manifest['included_manifests'].remove(group)
                 write_manifest(manifest, manifest_path)
                 manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=serial)
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
     def clear_asset_groups(self, serial):
         """Removes all groups (included_manifests) from specified manifest."""
@@ -109,7 +110,7 @@ class MunkiController:
             manifest['included_manifests'] = []
             write_manifest(manifest, manifest_path)
             manifest = read_manifest(manifest_path)
-            return self.MunkiAsset(manifest, serial=serial)
-        return self.MunkiAsset(RaidResponse('302').json)
+            return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
 
 
