@@ -10,21 +10,24 @@ import os.path
 
 class GoogleAuth:
 
-    def __init__(self, scopes):
+    def __init__(self, scopes, secrets_dir):
         # Scopes set the access permissions
         self.scopes = scopes
         self.credentials = None
-        if os.path.exists('secrets/token.json'):
-            self.credentials = Credentials.from_authorized_user_file('secrets/token.json', scopes)
+        self.secrets_dir = secrets_dir
+        self.token_file = f'{self.secrets_dir}/token.json'
+        self.creds_file = f'{self.secrets_dir}/credentials.json'
+        if os.path.exists(self.token_file):
+            self.credentials = Credentials.from_authorized_user_file(self.token_file, scopes)
         self.refresh_creds()
 
     def initialize_oauth(self):
         """Opens browser window and asks user to sign in to Google. Builds OAuth window using information
         in credentials.json"""
         flow = InstalledAppFlow.from_client_secrets_file(
-            'secrets/credentials.json', self.scopes)
+            self.creds_file, self.scopes)
         credentials = flow.run_local_server(port=0)
-        with open('secrets/token.json', 'w') as token:
+        with open(self.token_file, 'w') as token:
             token.write(credentials.to_json())
 
     def refresh_creds(self):
@@ -49,11 +52,11 @@ class GoogleController:
             if 'orgUnitPath' in self.dict:
                 self.org_unit = self.orgUnitPath
 
-    def __init__(self):
+    def __init__(self, secrets_dir):
         """Wrapper for interacting with the Google Admin API."""
         scopes = ['https://www.googleapis.com/auth/admin.directory.device.chromeos',
                   'https://www.googleapis.com/auth/admin.directory.orgunit']
-        self.google_auth = GoogleAuth(scopes)
+        self.google_auth = GoogleAuth(scopes, secrets_dir)
         if not self.google_auth.credentials:
             self.google_auth.initialize_oauth()
         self.service = build('admin', 'directory_v1', credentials=self.google_auth.credentials)
