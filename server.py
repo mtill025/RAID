@@ -22,9 +22,12 @@ SETTINGS_FILE = f"{ROOT_DIR}/config/settings.cfg"
 SETTINGS_TEMP_FILE = f"{ROOT_DIR}/system/settings_template.cfg"
 ORG_MAP_FILE = f"{ROOT_DIR}/config/org_mapping.json"
 ORG_MAP_TEMP_FILE = f"{ROOT_DIR}/system/org_mapping_template.json"
-LOG_FILE = f"{ROOT_DIR}/error.log"
+ERROR_LOG_FILE = f"{ROOT_DIR}/error.log"
 DB_FILE = f"{ROOT_DIR}/config/raid.db"
 GOOGLE_CREDS_DIR = f"{ROOT_DIR}/secrets"
+LOG_DIR = f"{ROOT_DIR}"
+SYNC_LOG_FILE = f"{LOG_DIR}/sync.log"
+
 
 # Import settings. Create from template if file does not exist.
 settings = configparser.ConfigParser()
@@ -174,11 +177,11 @@ def index():
         try:
             results = raid_search(search_num)
         except Exception as e:
-            if os.path.exists(LOG_FILE):
-                with open(LOG_FILE, 'a') as log:
+            if os.path.exists(ERROR_LOG_FILE):
+                with open(ERROR_LOG_FILE, 'a') as log:
                     log.write(f'\n{datetime.datetime.now().strftime("%Y-%m-%d %-I:%M:%S %p")}: {e}')
             else:
-                with open(LOG_FILE, 'w') as log:
+                with open(ERROR_LOG_FILE, 'w') as log:
                     log.write(f'{datetime.datetime.now().strftime("%Y-%m-%d %-I:%M:%S %p")}: {e}')
             logging.exception(e)
             flash("Unknown error, please check logs for more info.", "flash-error")
@@ -299,6 +302,84 @@ def admin():
     users = User.query.all()
     return render_template('admin.html', form=register_form, logged_in=current_user.is_authenticated,
                            commands=commands, users=users)
+
+
+@app.route('/sync', methods=['GET', 'POST'])
+@admin_only
+def tools_sync():
+    sync_form = forms.SyncForm()
+    sync_form.org_unit.render_kw = {'disabled': 'disabled'}  # Disabled until further testing
+    if request.method == 'POST':
+        log_text = f"\n\n\n---SYNC START {datetime.datetime.now().strftime('%Y-%m-%d %-I:%M %p')}---\n"
+        apply_requested = sync_form.apply.data
+        if sync_form.selected_assets.data == '1':
+            snipe_assets = snipe.get_all_assets()
+        elif sync_form.selected_assets.data == '2':
+            snipe_assets = snipe.get_archived_assets()
+        else:
+            snipe_assets = {
+                'rows': {}
+            }
+        for asset in snipe_assets['rows']:
+            serial = asset['serial']
+            raid_asset = raid_search(serial)
+            if sync_form.name.data == True:
+                new_name = raid_asset['snipe'].name
+                change_required = False
+                for platform in raid_asset:
+                    if raid_asset[platform] and raid_asset[platform].name != new_name:
+                        change_required = True
+                        log_text += f"\nName sync needed for Asset Tag#{asset['asset_tag']}"
+                if change_required and apply_requested:
+                    raid_update_asset_name(serial, new_name)
+            if sync_form.asset_tag.data == True:
+                new_asset_tag = raid_asset['snipe'].asset_tag
+                change_required = False
+                for platform in raid_asset:
+                    if raid_asset[platform] and raid_asset[platform].asset_tag != new_asset_tag:
+                        change_required = True
+                        log_text += f"\nAsset tag sync needed for Asset Tag#{asset['asset_tag']}"
+                if change_required and apply_requested:
+                    raid_update_asset_tag(serial, new_asset_tag)
+            if sync_form.org_unit.data == True:
+                # Use Google or AirWatch to determine org unit based on reverse org_mapping
+                if raid_asset['google'] or raid_asset['airwatch']:
+                    new_building = None
+                    new_group = None
+                    if raid_asset['google']:
+                        org_unit = raid_asset['google'].org_unit
+                        for building in org_map.snipe:
+                            for group in org_map.snipe[building]:
+                                if org_map.snipe[building][group] == org_unit:
+                                    new_building = building.upper()
+                                    new_group = group.title()
+                        # Google devices only need to update in Snipe, so for efficiency's sake, call the snipe controller directly
+                        if raid_asset['snipe'].org_unit != new_building:
+                            log_text += f"\nSnipe company sync needed for Asset Tag#{asset['asset_tag']}"
+                            if apply_requested:
+                                snipe.update_asset_company(serial, new_building)
+                    else:
+                        org_unit = raid_asset['airwatch'].org_unit
+                        for building in org_map.snipe:
+                            for group in org_map.snipe[building]:
+                                if org_map.snipe[building][group] == org_unit:
+                                    new_building = building.upper()
+                                    new_group = group.title()
+                        # Always update org for AW assets due to org mapping limitations
+                        log_text += f"\nOrg unit sync needed for Asset Tag#{asset['asset_tag']}"
+                        if apply_requested:
+                            raid_update_asset_org(serial, new_building, new_group)
+        with open(SYNC_LOG_FILE, 'a') as log:
+            log.write(log_text)
+        log_text = None
+        return redirect(url_for('tools_sync'))
+    return render_template('tools_sync.html', form=sync_form)
+
+
+@app.route('/checkin', methods=['GET', 'POST'])
+@admin_only
+def tools_checkin():
+    return redirect(url_for('index'))
 
 
 # ### RAID FUNCTIONS ### #
