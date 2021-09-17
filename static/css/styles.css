@@ -49,6 +49,14 @@ body {
     margin-top: 85px;
 }
 
+.sync_form ul {
+    list-style-type: none;
+}
+
+.sync-form-group {
+    border: 1px solid black;
+}
+
 /*Flashes*/
 
 .flashes {
