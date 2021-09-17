@@ -42,6 +42,7 @@ class RaidAsset:
 
 class RaidSettings:
     def __init__(self, settings_dict):
+        self.dict = settings_dict
         for key in settings_dict:
             setattr(self, key, settings_dict[key])
 
