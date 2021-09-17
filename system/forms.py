@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField, PasswordField
+from wtforms import StringField, SubmitField, SelectField, PasswordField, BooleanField, RadioField
 from wtforms.validators import DataRequired, URL
 
 
@@ -29,4 +29,13 @@ class EditForm(FlaskForm):
     building = SelectField("Building")
     group = SelectField("Group")
     edit_submit = SubmitField("Apply")
+
+
+class SyncForm(FlaskForm):
+    selected_assets = RadioField('Assets: ', choices=[(1, "Non-archived Assets"), (2, "Archived Assets")], default=1)
+    name = BooleanField("Name -")
+    asset_tag = BooleanField("Asset Tag -")
+    org_unit = BooleanField("Org Unit -")
+    apply = BooleanField("Apply changes")
+    sync_submit = SubmitField("Sync")
 
