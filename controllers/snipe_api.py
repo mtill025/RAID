@@ -1,3 +1,4 @@
+import math
 import requests
 import keyring
 from raid import RaidAsset, RaidResponse
@@ -15,7 +16,7 @@ class SnipeController:
         def __init__(self, assetinfo):
             super().__init__(assetinfo)
             self.platform = "Snipe"
-            if 'company' in self.dict:
+            if 'company' in self.dict and self.dict['company']:
                 self.org_unit = self.company['name']
 
     def __init__(self, api_url):
@@ -35,7 +36,7 @@ class SnipeController:
         endp = f"{self.api_url}{url}"
         if headers is not None:
             for key in headers:
-                def_header[key] = headers["key"]
+                def_header[key] = headers[key]
         if method == "get":
             if params is None:
                 params = {}
@@ -52,6 +53,12 @@ class SnipeController:
                 url=endp,
                 headers=def_header,
                 json=json,
+            )
+            return response
+        elif method == "post":
+            response = requests.post(
+                url=endp,
+                headers=def_header,
             )
             return response
         else:
@@ -176,9 +183,56 @@ class SnipeController:
             return asset.category['name']
         return None
 
+    def get_all_assets(self, filters=None):
+        """Returns a dictionary of all non-archived assets. Filters according to parameters provided.
+        Refer to Snipe API docs for list of filter options."""
+        if filters is None:
+            filters = {}
+        url = f'/hardware'
+        params = filters
+        response = self.req(
+            method='get',
+            url=url,
+            params=params
+        )
+        assets = response.json()
+        if assets['total'] > 500:
+            extra_cycles = math.floor(assets['total'] / 500)
+            offset = 500
+            for _ in range(extra_cycles):
+                params = {
+                    'offset': offset,
+                    'status': 'Archived',
+                }
+                response = self.req(
+                    method='get',
+                    url=url,
+                    params=params
+                )
+                assets['rows'] += response.json()['rows']
+                offset += 500
+        return assets
 
+    def get_archived_assets(self):
+        """Returns dictionary of all assets with a status of Archived."""
+        filters = {
+            'status': 'Archived',
+        }
+        return self.get_all_assets(filters=filters)
 
-
+    def checkin_asset(self, snipe_id):
+        """Checks in asset from user."""
+        url = f'/hardware/{snipe_id}/checkin'
+        response = self.req(
+            method='post',
+            url=url,
+            headers={
+                "Content-Type": "application/json"
+            }
+        )
+        if response.json()['status'] == 'success':
+            return self.SnipeAsset(response.json())
+        return self.SnipeAsset(RaidResponse('100').json)
 
 
 
