@@ -22,7 +22,7 @@
 <nav class="navbar navbar-dark navbar-expand-sm" id="mainNav">
     <div class="container">
         <a class="navbar-brand" href="{{ url_for('index') }}">RAID<span
-                class="navbar-text navbar-version">  v1.1.0 (Alpha 1)</span></a>
+                class="navbar-text navbar-version">  v1.1.0a2</span></a>
         <ul class="navbar-nav ml-auto">
             {% if current_user.role == 1 %}
                 <li class="nav-item">
@@ -34,7 +34,7 @@
                         Tools
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{{ url_for('tools_sync') }}">Synchronize</a></li>
+                        <li><a class="dropdown-item disabled" href="">Synchronize</a></li>
                         <li><a class="dropdown-item disabled" href="{{ url_for('tools_checkin') }}">Auto check-in</a></li>
                     </ul>
                 </li>
