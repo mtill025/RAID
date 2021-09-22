@@ -189,25 +189,21 @@ class SnipeController:
         if filters is None:
             filters = {}
         url = f'/hardware'
-        params = filters
         response = self.req(
             method='get',
             url=url,
-            params=params
+            params=filters
         )
         assets = response.json()
         if assets['total'] > 500:
             extra_cycles = math.floor(assets['total'] / 500)
             offset = 500
             for _ in range(extra_cycles):
-                params = {
-                    'offset': offset,
-                    'status': 'Archived',
-                }
+                filters['offset'] = offset
                 response = self.req(
                     method='get',
                     url=url,
-                    params=params
+                    params=filters
                 )
                 assets['rows'] += response.json()['rows']
                 offset += 500
