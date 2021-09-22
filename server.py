@@ -406,7 +406,7 @@ def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to
             break
         count += 1
         asset = snipe_assets['rows'][index + start_index]
-        print(f"---Processing {count} of {total_assets_to_process} ({total_assets})..")
+        print(f"---Processing Asset Tag #{asset['asset_tag']} - {count} of {total_assets_to_process} ({total_assets} actual)..")
         serial = asset['serial']
         raid_asset = raid_search(serial)
         if 'name' in fields_to_sync:
@@ -415,9 +415,9 @@ def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to
             for platform in raid_asset:
                 if raid_asset[platform] and raid_asset[platform].name != new_name:
                     change_required = True
-                    print(f"Name sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset[platform].name} -> {new_name})")
+                    print(f"Name sync needed ({raid_asset[platform].name} -> {new_name})")
             if change_required and apply_sync:
-                print(f"Name sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                print(f"Name sync APPLYING")
                 raid_update_asset_name(serial, new_name)
         if 'asset_tag' in fields_to_sync:
             new_asset_tag = raid_asset['snipe'].asset_tag
@@ -425,9 +425,9 @@ def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to
             for platform in raid_asset:
                 if raid_asset[platform] and raid_asset[platform].platform != "Munki" and raid_asset[platform].asset_tag != new_asset_tag:
                     change_required = True
-                    print(f"Asset tag sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset[platform].asset_tag} -> {new_asset_tag})")
+                    print(f"Asset tag sync needed ({raid_asset[platform].asset_tag} -> {new_asset_tag})")
             if change_required and apply_sync:
-                print(f"Asset tag sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                print(f"Asset tag sync APPLYING")
                 raid_update_asset_tag(serial, new_asset_tag)
         if 'org_unit' in fields_to_sync:
             # Use Google or AirWatch to determine org unit based on reverse org_mapping
@@ -443,9 +443,9 @@ def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to
                                 new_group = group.title()
                     # Google devices only need to update in Snipe, so for efficiency's sake, call the snipe controller directly
                     if raid_asset['snipe'].org_unit != new_building:
-                        print(f"Snipe company sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset['snipe'].org_unit} -> {new_building})")
+                        print(f"Snipe company sync needed ({raid_asset['snipe'].org_unit} -> {new_building})")
                         if apply_sync:
-                            print(f"Snipe company sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                            print(f"Snipe company sync APPLYING")
                             snipe.update_asset_company(serial, new_building)
                 else:
                     org_unit = raid_asset['airwatch'].org_unit
@@ -455,9 +455,9 @@ def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to
                                 new_building = building.upper()
                                 new_group = group.title()
                     # Always update org for AW assets due to org mapping limitations
-                    print(f"Org unit sync needed for Asset Tag#{asset['asset_tag']}")
+                    print(f"Org unit sync needed")
                     if apply_sync:
-                        print(f"Org unit sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                        print(f"Org unit sync APPLYING")
                         raid_update_asset_org(serial, new_building, new_group)
     end_time = datetime.datetime.now()
     time_diff = round(((end_time - start_time).total_seconds() / 60.0), 2)
