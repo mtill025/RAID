@@ -1,3 +1,4 @@
+from definitions import *
 from controllers import snipe_api, google_api, airwatch_api, munki_xml
 from system import forms
 from raid import RaidSettings
@@ -13,21 +14,6 @@ import configparser
 import os
 import datetime
 import logging
-
-# Set the root RAID directory
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Set paths for template and system files
-SETTINGS_FILE = f"{ROOT_DIR}/config/settings.cfg"
-SETTINGS_TEMP_FILE = f"{ROOT_DIR}/system/settings_template.cfg"
-ORG_MAP_FILE = f"{ROOT_DIR}/config/org_mapping.json"
-ORG_MAP_TEMP_FILE = f"{ROOT_DIR}/system/org_mapping_template.json"
-ERROR_LOG_FILE = f"{ROOT_DIR}/error.log"
-DB_FILE = f"{ROOT_DIR}/config/raid.db"
-GOOGLE_CREDS_DIR = f"{ROOT_DIR}/secrets"
-LOG_DIR = f"{ROOT_DIR}"
-SYNC_LOG_FILE = f"{LOG_DIR}/sync.log"
-
 
 # Import settings. Create from template if file does not exist.
 settings = configparser.ConfigParser()
@@ -304,78 +290,6 @@ def admin():
                            commands=commands, users=users)
 
 
-@app.route('/sync', methods=['GET', 'POST'])
-@admin_only
-def tools_sync():
-    sync_form = forms.SyncForm()
-    sync_form.org_unit.render_kw = {'disabled': 'disabled'}  # Disabled until further testing
-    if request.method == 'POST':
-        log_text = f"\n\n\n---SYNC START {datetime.datetime.now().strftime('%Y-%m-%d %-I:%M %p')}---\n"
-        apply_requested = sync_form.apply.data
-        if sync_form.selected_assets.data == '1':
-            snipe_assets = snipe.get_all_assets()
-        elif sync_form.selected_assets.data == '2':
-            snipe_assets = snipe.get_archived_assets()
-        else:
-            snipe_assets = {
-                'rows': {}
-            }
-        for asset in snipe_assets['rows']:
-            serial = asset['serial']
-            raid_asset = raid_search(serial)
-            if sync_form.name.data == True:
-                new_name = raid_asset['snipe'].name
-                change_required = False
-                for platform in raid_asset:
-                    if raid_asset[platform] and raid_asset[platform].name != new_name:
-                        change_required = True
-                        log_text += f"\nName sync needed for Asset Tag#{asset['asset_tag']}"
-                if change_required and apply_requested:
-                    raid_update_asset_name(serial, new_name)
-            if sync_form.asset_tag.data == True:
-                new_asset_tag = raid_asset['snipe'].asset_tag
-                change_required = False
-                for platform in raid_asset:
-                    if raid_asset[platform] and raid_asset[platform].asset_tag != new_asset_tag:
-                        change_required = True
-                        log_text += f"\nAsset tag sync needed for Asset Tag#{asset['asset_tag']}"
-                if change_required and apply_requested:
-                    raid_update_asset_tag(serial, new_asset_tag)
-            if sync_form.org_unit.data == True:
-                # Use Google or AirWatch to determine org unit based on reverse org_mapping
-                if raid_asset['google'] or raid_asset['airwatch']:
-                    new_building = None
-                    new_group = None
-                    if raid_asset['google']:
-                        org_unit = raid_asset['google'].org_unit
-                        for building in org_map.snipe:
-                            for group in org_map.snipe[building]:
-                                if org_map.snipe[building][group] == org_unit:
-                                    new_building = building.upper()
-                                    new_group = group.title()
-                        # Google devices only need to update in Snipe, so for efficiency's sake, call the snipe controller directly
-                        if raid_asset['snipe'].org_unit != new_building:
-                            log_text += f"\nSnipe company sync needed for Asset Tag#{asset['asset_tag']}"
-                            if apply_requested:
-                                snipe.update_asset_company(serial, new_building)
-                    else:
-                        org_unit = raid_asset['airwatch'].org_unit
-                        for building in org_map.snipe:
-                            for group in org_map.snipe[building]:
-                                if org_map.snipe[building][group] == org_unit:
-                                    new_building = building.upper()
-                                    new_group = group.title()
-                        # Always update org for AW assets due to org mapping limitations
-                        log_text += f"\nOrg unit sync needed for Asset Tag#{asset['asset_tag']}"
-                        if apply_requested:
-                            raid_update_asset_org(serial, new_building, new_group)
-        with open(SYNC_LOG_FILE, 'a') as log:
-            log.write(log_text)
-        log_text = None
-        return redirect(url_for('tools_sync'))
-    return render_template('tools_sync.html', form=sync_form)
-
-
 @app.route('/checkin', methods=['GET', 'POST'])
 @admin_only
 def tools_checkin():
@@ -470,6 +384,84 @@ def raid_update_asset_tag(serial, new_tag):
         if platform == "Mac":
             pass
     return results
+
+
+def cli_sync(assets_to_sync: str, fields_to_sync: list, apply_sync: bool, max_to_sync, start_index):
+    start_time = datetime.datetime.now()
+    print(f"---RAID SYNC START {start_time.strftime('%Y-%m-%d %-I:%M %p')}---")
+    if assets_to_sync == "non-archived":
+        snipe_assets = snipe.get_all_assets()
+    elif assets_to_sync == "archived":
+        snipe_assets = snipe.get_archived_assets()
+    else:
+        assets_to_sync = None
+        snipe_assets = {
+            'rows': {}
+        }
+    total_assets = snipe_assets['total']
+    total_assets_to_process = snipe_assets['total'] - start_index
+    count = 0
+    for index in range(len(snipe_assets['rows']) - start_index):
+        if max_to_sync and count >= max_to_sync:
+            break
+        count += 1
+        asset = snipe_assets['rows'][index + start_index]
+        print(f"---Processing {count} of {total_assets_to_process} ({total_assets})..")
+        serial = asset['serial']
+        raid_asset = raid_search(serial)
+        if 'name' in fields_to_sync:
+            new_name = raid_asset['snipe'].name
+            change_required = False
+            for platform in raid_asset:
+                if raid_asset[platform] and raid_asset[platform].name != new_name:
+                    change_required = True
+                    print(f"Name sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset[platform].name} -> {new_name})")
+            if change_required and apply_sync:
+                print(f"Name sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                raid_update_asset_name(serial, new_name)
+        if 'asset_tag' in fields_to_sync:
+            new_asset_tag = raid_asset['snipe'].asset_tag
+            change_required = False
+            for platform in raid_asset:
+                if raid_asset[platform] and raid_asset[platform].platform != "Munki" and raid_asset[platform].asset_tag != new_asset_tag:
+                    change_required = True
+                    print(f"Asset tag sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset[platform].asset_tag} -> {new_asset_tag})")
+            if change_required and apply_sync:
+                print(f"Asset tag sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                raid_update_asset_tag(serial, new_asset_tag)
+        if 'org_unit' in fields_to_sync:
+            # Use Google or AirWatch to determine org unit based on reverse org_mapping
+            if raid_asset['google'] or raid_asset['airwatch']:
+                new_building = None
+                new_group = None
+                if raid_asset['google']:
+                    org_unit = raid_asset['google'].org_unit
+                    for building in org_map.snipe:
+                        for group in org_map.snipe[building]:
+                            if org_map.snipe[building][group] == org_unit:
+                                new_building = building.upper()
+                                new_group = group.title()
+                    # Google devices only need to update in Snipe, so for efficiency's sake, call the snipe controller directly
+                    if raid_asset['snipe'].org_unit != new_building:
+                        print(f"Snipe company sync needed for Asset Tag#{asset['asset_tag']} ({raid_asset['snipe'].org_unit} -> {new_building})")
+                        if apply_sync:
+                            print(f"Snipe company sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                            snipe.update_asset_company(serial, new_building)
+                else:
+                    org_unit = raid_asset['airwatch'].org_unit
+                    for building in org_map.snipe:
+                        for group in org_map.snipe[building]:
+                            if org_map.snipe[building][group] == org_unit:
+                                new_building = building.upper()
+                                new_group = group.title()
+                    # Always update org for AW assets due to org mapping limitations
+                    print(f"Org unit sync needed for Asset Tag#{asset['asset_tag']}")
+                    if apply_sync:
+                        print(f"Org unit sync APPLYING for Asset Tag#{asset['asset_tag']}")
+                        raid_update_asset_org(serial, new_building, new_group)
+    end_time = datetime.datetime.now()
+    time_diff = round(((end_time - start_time).total_seconds() / 60.0), 2)
+    print(f"---Processed {count} assets in {time_diff} minutes!")
 
 
 if __name__ == "__main__":
