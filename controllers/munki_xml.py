@@ -36,6 +36,7 @@ class MunkiController:
 
     def __init__(self, repo_path, ou_regex):
         """Wrapper for interacting with a Munki repository."""
+        self.repo_root_dir = repo_path
         self.manifest_dir = f"{repo_path}/manifests"
         self.platform = "Munki"
         self.ou_regex = ou_regex
@@ -112,5 +113,17 @@ class MunkiController:
             manifest = read_manifest(manifest_path)
             return self.MunkiAsset(manifest, self.ou_regex, serial=serial)
         return self.MunkiAsset(RaidResponse('302').json, self.ou_regex)
+
+    def new_manifest(self, serial, name, group):
+        """Creates new manifest using the template manifest in the Munki repository."""
+        template_path = self.repo_root_dir + "/template"
+        if os.path.exists(template_path):
+            new_manifest = read_manifest(template_path)
+            new_manifest['display_name'] = name
+            if group:
+                new_manifest['included_manifests'] = [f"groups/{group}"]
+            write_manifest(new_manifest, f"{self.manifest_dir}/{serial}")
+            return self.MunkiAsset(new_manifest, self.ou_regex, serial=serial)
+        return self.MunkiAsset(RaidResponse('100').json, self.ou_regex)
 
 
