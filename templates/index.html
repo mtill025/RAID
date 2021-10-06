@@ -70,14 +70,18 @@
                 {% if results[platform] %}
                     <tr>
                     <th scope="row">{{ results[platform].platform }}</th>
-                    <td>{{ results[platform].name }}</td>
+                    {%  if results[platform].platform == "Munki" and results[platform].serial == "" %}
+                        <td><a class="btn btn-sm btn-danger" type="button" href="{{ url_for('new_munki_manifest', serial=results['snipe'].serial, name=results['snipe'].name, org=results['airwatch'].org_unit) }}">Create Manifest</a></td>
+                    {% else %}
+                        <td>{{ results[platform].name }}</td>
+                    {% endif %}
                     <td>{{ results[platform].asset_tag }}</td>
                     <td>{{ results[platform].serial }}</td>
-                        {% if results[platform].org_unit is not string %}
-                            <td>{{ ', '.join(results[platform].org_unit) }}</td>
-                        {% else %}
-                            <td>{{ results[platform].org_unit }}</td>
-                        {% endif %}
+                    {% if results[platform].org_unit is not string %}
+                        <td>{{ ', '.join(results[platform].org_unit) }}</td>
+                    {% else %}
+                        <td>{{ results[platform].org_unit }}</td>
+                    {% endif %}
                     </tr>
                 {% endif %}
             {% endfor %}
