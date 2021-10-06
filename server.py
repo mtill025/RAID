@@ -295,6 +295,17 @@ def admin():
 def tools_checkin():
     return redirect(url_for('index'))
 
+@app.route('/new-manifest', methods=['GET', 'POST'])
+@login_required
+def new_munki_manifest():
+    name = request.args.get('name')
+    serial = request.args.get('serial')
+    org_unit = request.args.get('org')
+    if org_unit == "":
+        org_unit = None
+    result = munki.new_manifest(serial, name, org_unit)
+    return redirect(url_for('index'))
+
 
 # ### RAID FUNCTIONS ### #
 
