@@ -73,7 +73,6 @@ class SnipeController:
             url=url,
         )
         json = response.json()
-        print(json)
         if response.status_code == 200 and 'rows' in json and json['rows'] != []:
             return self.SnipeAsset(json['rows'][0])
         try:
