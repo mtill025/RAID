@@ -301,6 +301,7 @@ def new_munki_manifest():
     name = request.args.get('name')
     serial = request.args.get('serial')
     org_unit = request.args.get('org')
+    org_unit = org_unit.replace("Devices", "", 1)
     if org_unit == "":
         org_unit = None
     result = munki.new_manifest(serial, name, org_unit)
