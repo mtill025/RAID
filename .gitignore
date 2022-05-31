@@ -10,3 +10,4 @@ setup.py
 /error.log
 /sync.log
 /templates/end_users.html
+/utils/
