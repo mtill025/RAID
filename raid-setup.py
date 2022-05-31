@@ -26,7 +26,7 @@ if ans == "y":
         if os.path.exists("secrets/credentials.json"):
             print("Attempting to open Google OAUTH authorization portal in a browser...")
             try:
-                google = google_api.GoogleController()
+                google = google_api.GoogleController("secrets")
             except DefaultCredentialsError:
                 pass
         else:
